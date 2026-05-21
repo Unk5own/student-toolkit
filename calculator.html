@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPA / CGPA Calculator | Student Toolkit</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body data-theme="light">
+    <div class="dashboard">
+        <header>
+            <a href="index.html" style="position: absolute; left: 0; top: 0; text-decoration: none; color: var(--text-muted); font-weight: bold;">⬅ Back to Home</a>
+
+            <h1>TARUMT GPA / CGPA CALCULATOR</h1>
+            <span class="subtitle">Bachelor of Information Technology (Honours) in Information Security (RIS)</span>
+            <button id="theme-toggle" onclick="toggleTheme()">🌙 Dark Mode</button>
+        </header>
+
+        <main class="content-area">
+            <div class="card-section gpa-section">
+                <div class="section-content">
+                    <h3>SEMESTER GPA</h3>
+                    <div class="term-selector">
+                        <div class="input-group-col">
+                            <label>Select Year</label>
+                            <select id="year-select" onchange="loadTermSubjects()">
+                                <option value="Y1">Year 1</option>
+                                <option value="Y2">Year 2</option>
+                                <option value="Y3">Year 3</option>
+                            </select>
+                        </div>
+                        <div class="input-group-col">
+                            <label>Select Semester</label>
+                            <select id="sem-select" onchange="loadTermSubjects()">
+                                <option value="S1">Semester 1</option>
+                                <option value="S2">Semester 2</option>
+                                <option value="S3">Semester 3</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="course-header">
+                        <span>Subject</span>
+                        <span>Credits</span>
+                        <span>Grade</span>
+                    </div>
+                    
+                    <div id="course-list">
+                        </div>
+                </div>
+                
+                <div class="section-footer">
+                    <button class="btn-calc" onclick="calculateGPA()">Calculate GPA</button>
+                    <div class="result-card">
+                        <h2>SEMESTER GPA</h2>
+                        <h1 id="gpa-score">0.0000</h1>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-section cgpa-section">
+                <div class="section-content">
+                    <h3>OVERALL CGPA</h3>
+                    <p class="instruction-text">Calculate your current semester first, then enter your historical data below.</p>
+                    <div class="cgpa-inputs-stacked">
+                        <div class="input-group-col">
+                            <label>Previous CGPA</label>
+                            <input type="number" id="prev-cgpa" placeholder="e.g., 3.50" step="0.01" onchange="saveCGPAData()">
+                        </div>
+                        <div class="input-group-col">
+                            <label>Previous Total Credits</label>
+                            <input type="number" id="prev-credits" placeholder="e.g., 45" min="1" onchange="saveCGPAData()">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-footer">
+                    <button class="btn-calc" onclick="calculateCGPA()">Calculate New CGPA</button>
+                    <div class="result-card">
+                        <h2>NEW OVERALL CGPA</h2>
+                        <h1 id="cgpa-score">0.0000</h1>
+                    </div>
+                </div>
+            </div>
+        </main>
+        <button class="btn-reset" onclick="resetAll()">Reset All Data</button>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

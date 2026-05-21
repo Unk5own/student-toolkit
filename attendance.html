@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Tracker | Student Toolkit</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body data-theme="light">
+    <div class="dashboard" style="max-width: 800px;">
+        <header>
+            <a href="index.html" class="back-link">⬅ Back to Home</a>
+            <h1>ATTENDANCE TRACKER</h1>
+            <span class="subtitle">Track how many hours you can safely miss (80% Requirement)</span>
+            <button id="theme-toggle" onclick="toggleTheme()">🌙 Dark Mode</button>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-link active" onclick="openTab('default-tab', this)">Y2S2 Timetable</button>
+            <button class="tab-link" onclick="openTab('custom-tab', this)">Custom Subjects</button>
+        </div>
+
+        <main class="content-area" style="display: block !important;">
+            
+            <div id="default-tab" class="tab-content active" style="display: block;">
+                <div class="card-section" style="border: none; padding: 0; background: transparent;">
+                    <div id="default-attendance-list">
+                        </div>
+                </div>
+            </div>
+
+            <div id="custom-tab" class="tab-content" style="display: none;">
+                <div class="card-section" style="border: none; padding: 0; background: transparent;">
+                    
+                    <div id="custom-attendance-list">
+                        </div>
+
+                    <div style="margin-top: 30px; border-top: 2px solid var(--border); padding-top: 25px;">
+                        <h3 class="section-title">Add Custom Subject</h3>
+                        <p class="instruction-text" style="margin-top: 0; margin-bottom: 20px;">Calculate attendance for other semesters or short terms.</p>
+                        
+                        <div class="input-group" style="grid-template-columns: 2fr 1fr 1fr 1fr 1.2fr;">
+                            <input type="text" id="new-sub-name" placeholder="Subject Name">
+                            <input type="number" id="new-sub-L" placeholder="L (hrs/wk)" min="0">
+                            <input type="number" id="new-sub-T" placeholder="T (hrs/wk)" min="0">
+                            <input type="number" id="new-sub-P" placeholder="P (hrs/wk)" min="0">
+                            <input type="number" id="new-sub-W" placeholder="Total Weeks" min="1">
+                        </div>
+                        <button class="btn-add" onclick="addCustomAttendanceSubject()" style="margin-top: 15px;">Add to Tracker</button>
+                    </div>
+
+                </div>
+            </div>
+
+        </main>
+        
+        <div style="margin-top: 40px; text-align: center;">
+            <button class="btn-reset" onclick="resetAttendance()">Reset Attendance Data</button>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
