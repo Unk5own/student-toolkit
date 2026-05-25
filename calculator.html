@@ -7,83 +7,79 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body data-theme="light">
-    <div class="dashboard">
-        <header>
-            <a href="index.html" style="position: absolute; left: 0; top: 0; text-decoration: none; color: var(--text-muted); font-weight: bold;">⬅ Back to Home</a>
-
-            <h1>TARUMT GPA / CGPA CALCULATOR</h1>
-            <span class="subtitle">Bachelor of Information Technology (Honours) in Information Security (RIS)</span>
-            <button id="theme-toggle" onclick="toggleTheme()">🌙 Dark Mode</button>
+    <div class="dashboard" style="max-width: 800px; padding: 20px; margin: 0 auto; box-sizing: border-box;">
+        
+        <div class="top-nav-bar">
+            <a href="index.html" class="btn-back">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M15 18l-6-6 6-6"/>
+                </svg>
+                Back
+            </a>
+            
+            <button id="theme-toggle" class="btn-dark-mode" onclick="toggleTheme()">🌙 Dark Mode</button>
+        </div>
+        <header style="text-align: center; margin-bottom: 40px;">
+            <h1 style="margin: 0; font-size: 2.2rem; color: var(--text-main);">GPA Calculator</h1>
+            <span class="subtitle">Track your Semester and Cumulative GPA</span>
         </header>
 
-        <main class="content-area">
-            <div class="card-section gpa-section">
-                <div class="section-content">
-                    <h3>SEMESTER GPA</h3>
-                    <div class="term-selector">
+        <main class="content-area" style="display: block !important; background: transparent; border: none; box-shadow: none; padding: 0;">
+            <div class="split-layout">
+                
+                <div class="card-section" style="margin: 0;">
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; border-bottom: 1px dashed var(--border); padding-bottom: 25px;">
                         <div class="input-group-col">
-                            <label>Select Year</label>
-                            <select id="year-select" onchange="loadTermSubjects()">
+                            <label style="font-weight: bold; color: var(--primary); margin-bottom: 8px;">Select Year</label>
+                            <select id="year-select" class="styled-select" onchange="loadTermSubjects()">
                                 <option value="Y1">Year 1</option>
-                                <option value="Y2">Year 2</option>
+                                <option value="Y2" selected>Year 2</option>
                                 <option value="Y3">Year 3</option>
                             </select>
                         </div>
                         <div class="input-group-col">
-                            <label>Select Semester</label>
-                            <select id="sem-select" onchange="loadTermSubjects()">
+                            <label style="font-weight: bold; color: var(--primary); margin-bottom: 8px;">Select Semester</label>
+                            <select id="sem-select" class="styled-select" onchange="loadTermSubjects()">
                                 <option value="S1">Semester 1</option>
-                                <option value="S2">Semester 2</option>
+                                <option value="S2" selected>Semester 2</option>
                                 <option value="S3">Semester 3</option>
                             </select>
                         </div>
                     </div>
 
-                    <div class="course-header">
-                        <span>Subject</span>
-                        <span>Credits</span>
-                        <span>Grade</span>
-                    </div>
-                    
-                    <div id="course-list">
-                        </div>
+                    <div id="course-list"></div>
                 </div>
-                
-                <div class="section-footer">
-                    <button class="btn-calc" onclick="calculateGPA()">Calculate GPA</button>
-                    <div class="result-card">
-                        <h2>SEMESTER GPA</h2>
-                        <h1 id="gpa-score">0.0000</h1>
+
+                <div>
+                    <div class="card-section" style="margin: 0 0 25px 0; text-align: center;">
+                        <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: bold; text-transform: uppercase;">Current Semester GPA</span>
+                        <h1 id="gpa-score" style="color: var(--primary); font-size: 3.5rem; margin: 10px 0;">0.0000</h1>
+                    </div>
+
+                    <div class="card-section" style="margin: 0;">
+                        <h3 style="margin: 0 0 20px 0; color: var(--primary);">Cumulative GPA (CGPA)</h3>
+                        <div class="input-group-col" style="margin-bottom: 15px;">
+                            <label style="font-weight: 600; color: var(--text-main); margin-bottom: 5px;">Previous CGPA</label>
+                            <input type="number" id="prev-cgpa" placeholder="e.g., 3.5000" step="0.01" class="styled-select" oninput="calculateCGPA()">
+                        </div>
+                        <div class="input-group-col" style="margin-bottom: 15px;">
+                            <label style="font-weight: 600; color: var(--text-main); margin-bottom: 5px;">Previous Total Credits</label>
+                            <input type="number" id="prev-credits" placeholder="e.g., 40" class="styled-select" oninput="calculateCGPA()">
+                        </div>
+                        <div style="margin-top: 25px; padding-top: 20px; border-top: 1px dashed var(--border); text-align: center;">
+                            <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: bold; text-transform: uppercase;">Overall CGPA</span>
+                            <h2 id="cgpa-score" style="color: var(--success); font-size: 2.5rem; margin: 10px 0;">0.0000</h2>
+                        </div>
                     </div>
                 </div>
             </div>
-
-            <div class="card-section cgpa-section">
-                <div class="section-content">
-                    <h3>OVERALL CGPA</h3>
-                    <p class="instruction-text">Calculate your current semester first, then enter your historical data below.</p>
-                    <div class="cgpa-inputs-stacked">
-                        <div class="input-group-col">
-                            <label>Previous CGPA</label>
-                            <input type="number" id="prev-cgpa" placeholder="e.g., 3.50" step="0.01" onchange="saveCGPAData()">
-                        </div>
-                        <div class="input-group-col">
-                            <label>Previous Total Credits</label>
-                            <input type="number" id="prev-credits" placeholder="e.g., 45" min="1" onchange="saveCGPAData()">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="section-footer">
-                    <button class="btn-calc" onclick="calculateCGPA()">Calculate New CGPA</button>
-                    <div class="result-card">
-                        <h2>NEW OVERALL CGPA</h2>
-                        <h1 id="cgpa-score">0.0000</h1>
-                    </div>
-                </div>
+            <div style="text-align: center; margin-top: 40px; padding-bottom: 20px;">
+            <button onclick="resetAll()" class="btn-delete" style="padding: 10px 20px; font-size: 1rem; border-radius: 8px;">
+                🚨 Reset All GPA Data
+            </button>
             </div>
         </main>
-        <button class="btn-reset" onclick="resetAll()">Reset All Data</button>
     </div>
     <script src="script.js"></script>
 </body>

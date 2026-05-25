@@ -1,440 +1,303 @@
+/* ==============================================================
+   1. GLOBAL THEMES & VARIABLES
+============================================================== */
 :root {
-    --bg-color: #f0f2f5;
-    --card-bg: #ffffff;
-    --text-main: #333333;
-    --text-muted: #666666;
-    --primary: #d6001c; 
-    --secondary: #2c3e50;
-    --success: #28a745;
-    --danger: #dc3545;
-    --border: #e0e0e0;
+    --bg-color: #f8f9fa;
+    --text-main: #212529;
+    --text-muted: #6c757d;
+    --primary: #0d6efd;
+    --border: #dee2e6;
     --input-bg: #ffffff;
-    --shadow: rgba(0, 0, 0, 0.08) 0px 4px 12px;
+    --danger: #dc3545;
+    --success: #198754;
 }
 
 [data-theme="dark"] {
     --bg-color: #121212;
-    --card-bg: #1e1e1e;
-    --text-main: #f0f0f0;
-    --text-muted: #aaaaaa;
-    --primary: #ff4d4d;
-    --secondary: #4da3ff;
-    --success: #34c759;
-    --danger: #ff453a;
-    --border: #333333;
-    --input-bg: #2a2a2a;
-    --shadow: rgba(0, 0, 0, 0.4) 0px 4px 15px;
+    --text-main: #f8f9fa;
+    --text-muted: #adb5bd;
+    --primary: #3d8bfd;
+    --border: #343a40;
+    --input-bg: #212529;
+    --danger: #ea868f;
+    --success: #75b798;
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background-color: var(--bg-color);
     color: var(--text-main);
-    display: flex;
-    justify-content: center;
-    padding: 40px 15px;
     margin: 0;
-    transition: background-color 0.3s, color 0.3s;
+    padding: 0;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-.dashboard {
-    background: var(--card-bg);
-    padding: 2.5rem;
-    border-radius: 16px;
-    box-shadow: var(--shadow);
-    width: 100%;
-    max-width: 1050px; 
-    transition: background-color 0.3s;
+* {
+    box-sizing: border-box; /* Prevents elements from breaking out of the screen */
 }
 
-header {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    position: relative;
-    margin-bottom: 30px;
+/* ==============================================================
+   2. LAYOUT & ANIMATIONS
+============================================================== */
+@keyframes fadeUp { 
+    from { opacity: 0; transform: translateY(15px); } 
+    to { opacity: 1; transform: translateY(0); } 
 }
 
-header h1 {
-    margin: 0;
-    font-size: 2rem;
-    color: var(--primary);
-    text-align: center;
+.dashboard { 
+    animation: fadeUp 0.6s ease-out; 
 }
 
 .subtitle {
+    display: block;
+    font-size: 1.1rem;
     color: var(--text-muted);
-    font-size: 1rem;
-    margin-top: 5px;
     font-weight: 500;
-    text-align: center;
+    margin-top: 8px;
 }
 
-#theme-toggle {
-    position: absolute;
-    right: 0;
-    top: 0;
-    width: auto;
-    padding: 8px 15px;
-    background: var(--card-bg);
-    color: var(--text-main);
+.card-section {
+    background: var(--input-bg);
     border: 1px solid var(--border);
-    border-radius: 20px;
-    font-size: 0.85rem;
-    cursor: pointer;
+    border-radius: 16px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
 }
 
-.content-area {
+.split-layout {
     display: grid;
-    grid-template-columns: 1.5fr 1fr;
+    grid-template-columns: 1fr;
     gap: 30px;
 }
-
-/* Flexbox Magic for Perfect Alignment */
-.card-section {
-    background: var(--bg-color);
-    padding: 25px;
-    border-radius: 12px;
-    border: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
+@media (min-width: 768px) {
+    .split-layout { grid-template-columns: 1.3fr 1fr; }
 }
 
-.section-content {
-    flex-grow: 1; /* Pushes the footer down */
-}
-
-.section-footer {
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    margin-top: 20px;
-}
-
-.card-section h3 {
-    margin-top: 0;
-    color: var(--primary);
-    border-bottom: 2px solid var(--border);
-    padding-bottom: 10px;
-    margin-bottom: 20px;
-}
-
-.term-selector {
-    display: flex;
-    gap: 15px;
-    margin-bottom: 20px;
-    background: var(--input-bg);
-    padding: 15px;
-    border-radius: 12px;
-    border: 1px solid var(--border);
-}
-
-.course-header {
-    display: grid;
-    grid-template-columns: 2.5fr 1fr 1.5fr;
-    gap: 10px;
-    font-weight: bold;
-    font-size: 0.85rem;
-    color: var(--text-muted);
-    margin-bottom: 10px;
-    padding: 0 5px;
-}
-
-.input-group {
-    display: grid;
-    grid-template-columns: 2.5fr 1fr 1.5fr;
-    gap: 10px;
-    margin-bottom: 15px;
-}
-
-input, select {
-    background-color: var(--input-bg);
-    color: var(--text-main);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px;
-    font-size: 0.9rem;
-    width: 100%;
-    box-sizing: border-box;
-}
-
-.subject-name {
-    background-color: transparent;
-    border: none;
-    font-weight: 500;
+/* ==============================================================
+   3. UNIFIED TOP NAVIGATION BAR & BUTTONS
+============================================================== */
+.top-nav-bar {
     display: flex;
     align-items: center;
-    font-size: 0.9rem;
-    padding-left: 5px;
-}
-
-.cgpa-inputs-stacked {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    margin-bottom: 20px;
-}
-
-.instruction-text {
-    font-size: 0.85rem;
-    color: var(--text-muted);
-    margin-bottom: 20px;
-    line-height: 1.4;
-}
-
-.input-group-col {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.input-group-col label {
-    font-size: 0.85rem;
-    font-weight: bold;
-    color: var(--text-muted);
-}
-
-button {
-    padding: 14px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 1rem;
     width: 100%;
-    transition: 0.2s;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
 }
 
-button:hover { opacity: 0.9; transform: translateY(-2px); }
-
-.btn-calc { 
-    background-color: var(--secondary); 
-    color: white; 
-    height: 55px; /* Forced uniform height */
-}
-
-.btn-reset { 
-    background: transparent; 
-    color: var(--danger); 
-    border: 2px solid var(--danger); 
-    margin-top: 35px; 
-}
-
-.result-card {
+.btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    padding: 10px 22px; 
+    border-radius: 50px; 
     background: var(--input-bg);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    color: var(--text-main);
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.btn-back:hover {
+    background: var(--primary);
+    color: white; 
+    border-color: var(--primary);
+    transform: translateX(-3px);
+}
+
+.btn-dark-mode {
+    padding: 10px 22px;
+    border-radius: 50px; 
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    color: var(--text-main);
+    font-weight: 600;
+    transition: all 0.2s ease;
+    margin-left: auto; /* Forces it to the far right */
+}
+
+.btn-dark-mode:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+/* ==============================================================
+   4. HOME PAGE (INDEX.HTML) MENU CARDS
+============================================================== */
+.welcome-banner {
+    background: linear-gradient(135deg, rgba(13, 110, 253, 0.08), rgba(13, 110, 253, 0.02));
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 40px 20px;
     text-align: center;
-    padding: 20px;
-    margin-top: 15px;
-    height: 130px; /* Forced uniform height */
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+    margin-bottom: 40px;
 }
 
-.result-card h2 { margin: 0; font-size: 1.1rem; color: var(--text-muted); }
-.result-card h1 { margin: 10px 0 0 0; color: var(--primary); font-size: 2.5rem; }
-
-@media (max-width: 768px) {
-    .content-area { grid-template-columns: 1fr; }
-    .course-header, .input-group { grid-template-columns: 1fr; gap: 5px; }
-    .subject-name { padding-bottom: 5px; border-bottom: 1px dashed var(--border); margin-bottom: 5px; }
-    header h1 { font-size: 1.5rem; margin-top: 35px; }
-    .result-card { height: auto; padding: 25px; }
-}
-
-/* --- New Main Dashboard Styles --- */
 .menu-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 25px;
-    margin-top: 20px;
+    display: grid; 
+    grid-template-columns: 1fr; 
+    gap: 30px; 
+}
+@media (min-width: 800px) {
+    .menu-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
 .menu-card {
     background: var(--input-bg);
     border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 30px 20px;
+    border-radius: 28px; 
+    padding: 50px 30px; 
     text-align: center;
     text-decoration: none;
-    color: var(--text-main);
-    transition: all 0.3s ease;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
 }
 
 .menu-card:hover {
-    transform: translateY(-5px);
-    box-shadow: var(--shadow);
+    transform: translateY(-8px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.08);
     border-color: var(--primary);
 }
 
-.menu-card .menu-icon {
-    font-size: 3rem;
-    margin-bottom: 15px;
-}
-
-.menu-card h2 {
-    margin: 0 0 10px 0;
-    color: var(--primary);
-    font-size: 1.3rem;
-}
-
-.menu-card p {
-    margin: 0;
-    font-size: 0.9rem;
-    color: var(--text-muted);
-    line-height: 1.5;
-}
-
-.menu-card.disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    pointer-events: none;
-    filter: grayscale(100%);
-}
-
-/* --- Attendance Tracker Styles --- */
-.back-link {
-    position: absolute; 
-    left: 0; 
-    top: 0; 
-    text-decoration: none; 
-    color: var(--text-muted); 
-    font-weight: bold;
-}
-.back-link:hover { color: var(--primary); }
-
-.attendance-card {
-    background: var(--input-bg);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 15px;
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr;
-    gap: 20px;
-    align-items: center;
-    box-shadow: rgba(0, 0, 0, 0.04) 0px 2px 8px;
-}
-
-.att-info h3 {
-    margin: 0 0 5px 0;
-    color: var(--text-main);
-    border: none;
-    padding: 0;
-}
-
-.att-breakdown {
-    font-size: 0.85rem;
-    color: var(--text-muted);
-    background: var(--bg-color);
-    padding: 5px 10px;
-    border-radius: 6px;
-    display: inline-block;
-    border: 1px solid var(--border);
-}
-
-.att-missed {
-    text-align: center;
-}
-
-.att-missed label {
-    display: block;
-    font-size: 0.8rem;
-    font-weight: bold;
-    color: var(--text-muted);
-    margin-bottom: 5px;
-}
-
-.att-missed input {
-    text-align: center;
-    font-size: 1.2rem;
-    font-weight: bold;
-}
-
-.att-status {
-    text-align: center;
-    padding: 15px;
-    border-radius: 10px;
-    background: var(--bg-color);
-    border: 2px solid var(--border);
-}
-
-.att-status h1 {
-    margin: 0;
-    font-size: 2.5rem;
-}
-
-.att-status span {
-    font-size: 0.8rem;
-    font-weight: bold;
-    text-transform: uppercase;
-}
-
-/* Responsive Attendance Card */
-@media (max-width: 650px) {
-    .attendance-card { grid-template-columns: 1fr; text-align: center; }
-    .att-status { padding: 10px; }
-}
-
-/* --- Tabs (Fixed for Side-by-Side Layout) --- */
-.tabs {
+.icon-wrapper {
+    width: 90px;
+    height: 90px;
+    margin: 0 auto 25px auto;
+    background: rgba(128, 128, 128, 0.08);
+    border-radius: 50%;
     display: flex;
-    flex-direction: row; /* Forces them into a horizontal row */
-    gap: 10px;
-    margin-bottom: 20px;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.8rem; 
+    transition: transform 0.3s ease, background 0.3s ease;
 }
 
-.tab-link {
-    flex: 1; /* Makes the left and right tab share the space exactly 50/50 */
-    width: auto; /* Overrides the global 100% button width */
-    margin-top: 0; /* Overrides the global button margin */
-    background: transparent;
-    color: var(--text-muted);
-    border: none;
-    border-bottom: 3px solid var(--border);
-    border-radius: 0; /* Removes rounded corners to look like a real tab */
-    padding: 12px;
+.menu-card:hover .icon-wrapper {
+    transform: scale(1.1);
+    background: rgba(13, 110, 253, 0.1); 
+}
+
+/* ==============================================================
+   5. INPUTS, FORMS & FRACTIONS
+============================================================== */
+.input-group-col {
+    display: flex;
+    flex-direction: column;
+}
+
+.styled-select {
+    width: 100%; 
+    padding: 12px; 
+    border-radius: 8px; 
+    font-family: inherit; 
     font-size: 1rem;
+    background-color: var(--input-bg); 
+    color: var(--text-main); 
+    border: 1px solid var(--border);
+    transition: border-color 0.2s ease;
+}
+.styled-select:focus {
+    outline: none;
+    border-color: var(--primary);
 }
 
-.tab-link.active {
-    color: var(--primary);
-    border-bottom: 3px solid var(--primary);
-    font-weight: bold;
-    background: transparent;
+.fraction-input {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 5px;
 }
 
-/* --- Professional UI Touches --- */
-.section-title {
-    font-size: 1.2rem;
-    color: var(--secondary);
-    margin-bottom: 10px;
-    padding-bottom: 5px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+.fraction-input input { 
+    width: 100%; 
+    text-align: center; 
+    font-size: 1.1rem; 
+    padding: 12px; 
+    font-family: inherit; 
+    border: 1px solid var(--border); 
+    border-radius: 8px; 
+    background: var(--input-bg); 
+    color: var(--text-main); 
+    transition: border-color 0.2s ease;
+}
+
+.fraction-input input:focus { 
+    outline: none; 
+    border-color: var(--primary); 
+}
+
+/* ==============================================================
+   6. GRADING SCALE TABLE
+============================================================== */
+.scale-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.scale-table th {
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 10px;
+    color: var(--text-main);
+}
+
+.scale-table td {
+    padding: 12px 0;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+}
+
+.scale-table tr:last-child td { 
+    border-bottom: none; 
+}
+
+/* Strict Alignment for the Table */
+.scale-table th:nth-child(1), .scale-table td:nth-child(1) { 
+    text-align: left; 
+    padding-left: 10px; 
+    width: 25%; 
+}
+.scale-table th:nth-child(2), .scale-table td:nth-child(2) { 
+    text-align: center; 
+    width: 50%; 
+}
+.scale-table th:nth-child(3), .scale-table td:nth-child(3) { 
+    text-align: right; 
+    padding-right: 10px; 
+    width: 25%; 
+}
+
+/* ==============================================================
+   7. UTILITY CLASSES (Buttons used in GPA/Attendance)
+============================================================== */
+.btn-add {
+    background-color: var(--primary);
+    color: white;
     border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: opacity 0.2s;
 }
+.btn-add:hover { opacity: 0.9; }
 
 .btn-delete {
     background-color: transparent;
     color: var(--danger);
     border: 1px solid var(--danger);
-    padding: 6px 12px;
-    border-radius: 6px;
+    padding: 8px 16px;
+    border-radius: 8px;
     cursor: pointer;
-    font-size: 0.8rem;
     font-weight: 600;
-    transition: all 0.2s ease;
-    margin-top: 10px;
-    display: inline-block;
+    transition: all 0.2s;
 }
-
 .btn-delete:hover {
     background-color: var(--danger);
     color: white;

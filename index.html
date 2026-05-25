@@ -3,41 +3,155 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Toolkit</title>
+    <title>Student Toolkit | Home</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Smooth page load animation */
+        @keyframes fadeUp { 
+            from { opacity: 0; transform: translateY(15px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+        
+        .dashboard { 
+            animation: fadeUp 0.6s ease-out; 
+            position: relative; /* Locks the dark mode button inside */
+            padding: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        #theme-toggle:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* New Welcome Banner to fill the empty space */
+        .welcome-banner {
+            background: linear-gradient(135deg, rgba(0, 123, 255, 0.08), rgba(0, 123, 255, 0.02));
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 40px 20px;
+            text-align: center;
+            margin-top: 60px; /* Space for the absolute button */
+            margin-bottom: 40px;
+        }
+        .welcome-banner h1 {
+            margin: 0 0 10px 0;
+            font-size: 2.2rem;
+            color: var(--text-main);
+            letter-spacing: -0.5px;
+        }
+        .welcome-banner p {
+            margin: 0;
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* Grid Layout */
+        .menu-grid {
+            display: grid; 
+            grid-template-columns: 1fr; 
+            gap: 30px; 
+        }
+        @media (min-width: 800px) {
+            .menu-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        /* Bigger, Modern App Cards */
+        .menu-card {
+            background: var(--bg-color);
+            border: 1px solid var(--border);
+            border-radius: 28px; 
+            padding: 50px 30px; /* Massively increased padding */
+            text-align: center;
+            text-decoration: none;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+        }
+
+        .menu-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.08);
+            border-color: var(--primary);
+        }
+
+        /* Icon Circular Wrapper - Larger */
+        .icon-wrapper {
+            width: 90px;
+            height: 90px;
+            margin: 0 auto 25px auto;
+            background: rgba(128, 128, 128, 0.08);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.8rem; /* Bigger Emojis */
+            transition: transform 0.3s ease, background 0.3s ease;
+        }
+
+        .menu-card:hover .icon-wrapper {
+            transform: scale(1.1);
+            background: rgba(0, 123, 255, 0.1); 
+        }
+
+        /* Card Typography - Larger */
+        .menu-card h2 { 
+            margin: 0 0 12px 0; 
+            color: var(--text-main); 
+            font-size: 1.5rem; 
+            font-weight: 700; 
+        }
+        .menu-card p { 
+            margin: 0; 
+            color: var(--text-muted); 
+            font-size: 1.05rem; 
+            line-height: 1.5; 
+        }
+    </style>
 </head>
 <body data-theme="light">
     <div class="dashboard">
-        <header>
-            <h1>STUDENT TOOLKIT</h1>
-            <span class="subtitle">Bachelor of Information Technology (Honours) in Information Security (RIS)</span>
-            <button id="theme-toggle" onclick="toggleTheme()">🌙 Dark Mode</button>
+        
+        <div class="top-nav-bar" style="border-bottom: none; padding-bottom: 0;">
+            <button id="theme-toggle" class="btn-dark-mode" onclick="toggleTheme()">🌙 Dark Mode</button>
+        </div>
+
+        <header class="welcome-banner" style="margin-top: 10px;">
+            <h1>👋 Welcome to your Student Toolkit!</h1>
+            <p>TARUMT Academic Dashboard • <span id="current-date"></span></p>
         </header>
 
-        <main class="content-area" style="display: block;">
-            <h3 style="text-align: center; color: var(--text-muted); margin-bottom: 30px;">Select a tool to get started</h3>
-            
+        <main class="content-area" style="background: transparent; border: none; box-shadow: none; padding: 0;">
             <div class="menu-grid">
-                <a href="calculator.html" class="menu-card">
-                    <div class="menu-icon">📊</div>
-                    <h2>GPA & CGPA Calculator</h2>
-                    <p>Calculate your current semester grades and track your overall academic progress.</p>
-                </a>
-
+                
                 <a href="attendance.html" class="menu-card">
-                    <div class="menu-icon">✅</div>
+                    <div class="icon-wrapper">📅</div>
                     <h2>Attendance Tracker</h2>
-                    <p>Calculate your current attendance and see how many classes you can safely miss.</p>
+                    <p>Track your safe skips and stay above the 80% limit.</p>
                 </a>
 
-                <div class="menu-card disabled">
-                    <div class="menu-icon">📚</div>
-                    <h2>Syllabus Viewer</h2>
-                    <p>Coming Soon. View your degree structure and upcoming subjects.</p>
-                </div>
+                <a href="marks.html" class="menu-card">
+                    <div class="icon-wrapper">🎯</div>
+                    <h2>Target Marks</h2>
+                    <p>Calculate exactly what you need in your final exams.</p>
+                </a>
+
+                <a href="calculator.html" class="menu-card">
+                    <div class="icon-wrapper">📈</div>
+                    <h2>GPA Calculator</h2>
+                    <p>Track your Semester GPA and project your new CGPA.</p>
+                </a>
+
             </div>
         </main>
     </div>
+    
     <script src="script.js"></script>
+    <script>
+        // Simple script to display today's date in the welcome banner
+        const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('current-date').innerText = new Date().toLocaleDateString('en-MY', dateOptions);
+    </script>
 </body>
 </html>
