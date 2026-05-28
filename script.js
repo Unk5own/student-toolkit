@@ -8,6 +8,8 @@ window.onload = function() {
         initGPACalculator(); 
     } else if (document.getElementById('attendance-list') || document.getElementById('y2s2-container')) {
         initAttendanceTracker(); 
+    } else if (document.getElementById('tarumt-map')) {
+        initMap(); 
     }
 };
 
@@ -22,6 +24,118 @@ function toggleTheme() {
 function loadTheme() {
     const savedTheme = localStorage.getItem('theme') || 'light';
     document.body.setAttribute('data-theme', savedTheme);
+}
+
+/* ==============================================================
+   MAP.html :D
+============================================================== */
+
+function initMap() {
+    const mapElement = document.getElementById('tarumt-map');
+    if (!mapElement) return;
+
+    const mapContainer = mapElement.parentElement;
+
+    const containerWidth = mapContainer.clientWidth;
+    const containerHeight = mapContainer.clientHeight;
+    
+    const defaultScale = Math.min(1, containerWidth / 1440);
+
+    // Center the SVG inside container
+    const startX = (containerWidth - (1440 * defaultScale)) / 2;
+    const startY = (containerHeight - (770 * defaultScale))/ 2;
+
+    
+    const myPanzoom = panzoom(mapElement, {
+        maxZoom: 5,               
+        minZoom: 0.7,     
+        bounds: true,             
+        boundsPadding: 0.07,      
+        smoothScroll: false,      
+        zoomDoubleClickSpeed: 1,     
+             
+        onTouch: function(e) { 
+            return false;         
+        }
+    });
+
+    // Apply centered default position
+    myPanzoom.zoomAbs(0, 0, defaultScale);
+    myPanzoom.moveTo(startX, startY);
+    
+    // 2. The Campus Directory (Map search terms to your SVG IDs)
+    const campusDirectory = {
+        "library": "library-building",
+
+        "citc": "citc-building",
+        
+        "dtar": "dtar-building",
+        "dewan": "dtar-building",
+        "hall": "dtar-building",
+        
+        "clubhouse": "clubhouse-building",
+        
+        "sport": "sportscomplex-building",
+        "gym": "sportscomplex-building",
+
+        "pool": "swimming-pool",
+        "swim" : "swimming-pool",
+
+        "hostel": "taruc-hostel",
+
+        "vtar": "vtar-building",
+        
+        "kindergarden": "tarumt-kindergarden",
+        "cece": "tarumt-kindergarden",
+        "tadika": "tarumt-kindergarden",
+    };
+
+    // 3. The Search Logic
+    const searchInput = document.getElementById('map-search');
+    
+    searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        
+        // Step A: Remove highlights
+        document.querySelectorAll('.building-highlight').forEach(el => {
+            el.classList.remove('building-highlight');
+        });
+
+        if (query.length < 2) return; 
+
+        // Step B: Loop through directory
+        for (const [keyword, svgId] of Object.entries(campusDirectory)) {
+            
+            if (keyword.includes(query)) {
+                const targetBuilding = document.getElementById(svgId);
+                
+                if (targetBuilding) {
+                    targetBuilding.classList.add('building-highlight');
+                    
+                    const bbox = targetBuilding.getBBox();
+                    const svgCenterX = bbox.x + (bbox.width / 2);
+                    const svgCenterY = bbox.y + (bbox.height / 2);
+                    
+                    const currentTransform = myPanzoom.getTransform();
+                    const currentScale = currentTransform.scale;
+
+                    const mapContainer = mapElement.parentElement;
+                    const containerWidth = mapContainer.clientWidth;
+                    const containerHeight = mapContainer.clientHeight;
+
+                    // Keep current zoom level
+                    const moveX = (containerWidth / 2) - (svgCenterX * currentScale);
+                    const moveY = (containerHeight / 2) - (svgCenterY * currentScale);
+
+                    // Smoothly center only
+                    myPanzoom.smoothMoveTo(moveX, moveY);
+                    
+                    // THE CRITICAL FIX: Stop searching so the map doesn't try to fly to multiple buildings at once!
+                    break; 
+                }
+            }
+        }
+    });
 }
 
 
