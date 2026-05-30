@@ -70,24 +70,121 @@ function initMap() {
         "citc": "citc-building",
         
         "dtar": "dtar-building",
-        "dewan": "dtar-building",
+        "dewan tunku abdul rahman": "dtar-building",
         "hall": "dtar-building",
+
+        "se": "se-building",
         
         "clubhouse": "clubhouse-building",
+        "club house": "clubhouse-building",
         
-        "sport": "sportscomplex-building",
-        "gym": "sportscomplex-building",
+        "sport complex": "sportscomplex-building",
 
-        "pool": "swimming-pool",
-        "swim" : "swimming-pool",
+        "swimming pool": "swimming-pool",
 
-        "hostel": "taruc-hostel",
+        "taruc hostel": "taruc-hostel",
+        "tarumt hostel": "taruc-hostel",
 
-        "vtar": "vtar-building",
+        "vtar institute": "vtar-building",
         
         "kindergarden": "tarumt-kindergarden",
-        "cece": "tarumt-kindergarden",
-        "tadika": "tarumt-kindergarden",
+        "taska & tadika cece": "tarumt-kindergarden",
+
+        "red bricks canteen": "red-brick-canteen-building",
+        "red bricks cafeteria": "red-brick-canteen-building",
+
+        "yum yum canteen": "yum-yum-canteen-building",
+
+        "sc canteen": "sc-canteen-building",
+
+        "tarumt arena": "tarumt-arena",
+
+        "block a": "block-a-building",
+        
+        "bangunan tun tan siew sin": "tun-tan-siew-sin-building",
+
+        "block k": "block-k-building",
+
+        "dk b": "dk-b-building",
+        "dkb": "dk-b-building",
+
+        "dk 2": "dk-2-building",
+        "dk2": "dk-2-building",
+
+        "dk 6": "dk-6-building",
+        "dk6": "dk-6-building",
+
+        "dk 7": "dk-7-building",
+        "dk7": "dk-7-building",
+
+        "dk 1": "dk-1-building",
+        "dk1": "dk-1-building",
+
+        "dk 4": "dk-4-building",
+        "dk4": "dk-4-building",
+
+        "dk 3": "dk-3-building",
+        "dk3": "dk-3-building",
+
+        "dk 5": "dk-5-building",
+        "dk5": "dk-5-building",
+
+        "dk 8": "dk-8-building",
+        "dk8": "dk-8-building",
+
+        "dk z": "dk-z-building",
+        "dkz": "dk-z-building",
+
+        "dk a": "dk-a-building",
+        "dka": "dk-a-building",
+
+        "dk w": "dk-w-building",
+        "dkw": "dk-w-building",
+
+        "dk x": "dk-x-building",
+        "dkx": "dk-x-building",
+
+        "dk y": "dk-y-building",
+        "dky": "dk-y-building",
+
+        "dk c": "dk-c-d-building",
+        "dkc": "dk-c-d-building",
+
+        "dk d": "dk-c-d-building",
+        "dkd": "dk-c-d-building",
+
+        "dk aba": "dk-aba-abb-building",
+        "dkaba": "dk-aba-abb-building",
+
+        "dk abb": "dk-aba-abb-building",
+        "dkabb": "dk-aba-abb-building",
+
+        "dk abc": "dk-abc-abd-building",
+        "dkabc": "dk-abc-abd-building",
+
+        "dk abd": "dk-abc-abd-building",
+        "dkabd":  "dk-abc-abd-building",
+
+        "dk abe": "dk-abe-abf-building",
+        "dkabe": "dk-abe-abf-building",
+
+        "dk abf": "dk-abe-abf-building",
+        "dkabf":"dk-abe-abf-building",
+
+        "sg": "sg-building",
+
+        "sf": "sf-building",
+
+        "sd": "sd-building",
+
+        "sa": "sa-building",
+
+        "sb": "sb-building",
+
+        "block s": "block-s-building",
+        "s": "block-s-building",
+
+
     };
 
     // 3. The Search Logic
@@ -101,38 +198,51 @@ function initMap() {
             el.classList.remove('building-highlight');
         });
 
-        if (query.length < 2) return; 
+        if (query.length < 1) return; 
 
         // Step B: Loop through directory
-        for (const [keyword, svgId] of Object.entries(campusDirectory)) {
-            
-            if (keyword.includes(query)) {
-                const targetBuilding = document.getElementById(svgId);
-                
-                if (targetBuilding) {
-                    targetBuilding.classList.add('building-highlight');
-                    
-                    const bbox = targetBuilding.getBBox();
-                    const svgCenterX = bbox.x + (bbox.width / 2);
-                    const svgCenterY = bbox.y + (bbox.height / 2);
-                    
-                    const currentTransform = myPanzoom.getTransform();
-                    const currentScale = currentTransform.scale;
+        // Step B: Find the matching building
+        let targetSvgId = null;
 
-                    const mapContainer = mapElement.parentElement;
-                    const containerWidth = mapContainer.clientWidth;
-                    const containerHeight = mapContainer.clientHeight;
-
-                    // Keep current zoom level
-                    const moveX = (containerWidth / 2) - (svgCenterX * currentScale);
-                    const moveY = (containerHeight / 2) - (svgCenterY * currentScale);
-
-                    // Smoothly center only
-                    myPanzoom.smoothMoveTo(moveX, moveY);
-                    
-                    // THE CRITICAL FIX: Stop searching so the map doesn't try to fly to multiple buildings at once!
-                    break; 
+        // 1. EXACT MATCH PRIORITY: This instantly solves the "s" and "se" bug
+        if (campusDirectory[query]) {
+            targetSvgId = campusDirectory[query];
+        } 
+        // 2. PARTIAL MATCH FALLBACK: This still lets users type "lib" to find the library
+        else {
+            for (const [keyword, svgId] of Object.entries(campusDirectory)) {
+                if (keyword.includes(query)) {
+                    targetSvgId = svgId;
+                    break; // Stop at the first partial match
                 }
+            }
+        }
+
+        // Step C: Highlight and Pan
+        if (targetSvgId) {
+            const targetBuilding = document.getElementById(targetSvgId);
+            
+            if (targetBuilding) {
+                targetBuilding.classList.add('building-highlight');
+                
+                // --- Your existing PanZoom math ---
+                const bbox = targetBuilding.getBBox();
+                const svgCenterX = bbox.x + (bbox.width / 2);
+                const svgCenterY = bbox.y + (bbox.height / 2);
+                
+                const currentTransform = myPanzoom.getTransform();
+                const currentScale = currentTransform.scale;
+
+                const mapContainer = mapElement.parentElement;
+                const containerWidth = mapContainer.clientWidth;
+                const containerHeight = mapContainer.clientHeight;
+
+                // Keep current zoom level
+                const moveX = (containerWidth / 2) - (svgCenterX * currentScale);
+                const moveY = (containerHeight / 2) - (svgCenterY * currentScale);
+
+                // Smoothly center only
+                myPanzoom.smoothMoveTo(moveX, moveY);
             }
         }
     });

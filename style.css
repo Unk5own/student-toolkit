@@ -324,3 +324,15 @@ body {
     filter: drop-shadow(0px 0px 15px #3b82f6) brightness(1.2);
 }
 
+/* Special highlight rule for the Arena image */
+#tarumt-arena.building-highlight {
+    fill: url(#pattern16_2003_13) !important; 
+    stroke: none !important; 
+    
+    /* THE UPGRADE: Stacked shadows for a massive glow + brighter image */
+    filter: drop-shadow(0px 0px 6px var(--primary)) 
+            drop-shadow(0px 0px 18px var(--primary)) 
+            drop-shadow(0px 0px 30px var(--primary)) 
+            brightness(1.3);
+}
+
