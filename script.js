@@ -92,16 +92,29 @@ function initMap() {
 
         "red bricks canteen": "red-brick-canteen-building",
         "red bricks cafeteria": "red-brick-canteen-building",
+        "redbrick": "red-brick-canteen-building",
+        "red brick": "red-brick-canteen-building",
+        "rb": "red-brick-canteen-building",
 
         "yum yum canteen": "yum-yum-canteen-building",
+        "yumyum": "yum-yum-canteen-building",
 
         "sc canteen": "sc-canteen-building",
 
         "tarumt arena": "tarumt-arena",
+        "ta": "tarumt-arena",
 
         "block a": "block-a-building",
+        "a": "block-a-building",
+        "focs": "block-a-building",
+        "foas": "block-a-building",
+        "deca": "block-a-building",
+        "dsa": "block-a-building",
+        "diso": "block-a-building",
         
         "bangunan tun tan siew sin": "tun-tan-siew-sin-building",
+        "dace": "tun-tan-siew-sin-building",
+        "bursary": "tun-tan-siew-sin-building",
 
         "block k": "block-k-building",
 
@@ -178,12 +191,64 @@ function initMap() {
         "sd": "sd-building",
 
         "sa": "sa-building",
+        "fafb": "sa-building",
+        "cpe": "sa-building",
+        "cbiev": "sa-building",
 
         "sb": "sb-building",
 
         "block s": "block-s-building",
         "s": "block-s-building",
 
+        "fern house": "fern-house-building",
+        "block z": "fern-house-building",
+        "z": "fern-house-building",
+
+        "block y": "block-y-building",
+        "y": "block-y-building",
+
+        "block x": "block-x-building",
+        "x": "block-x-building",
+
+        "dk e": "dk-e-building",
+        "dke": "dk-e-building",
+        
+        "block w": "block-w-building",
+        "w": "block-w-building",
+        
+        "block v": "block-v-building",
+        "v": "block-v-building",
+
+        "block r": "block-r-building",
+        "r": "block-r-building",
+
+        "block q": "block-q-building",
+        "q": "block-q-building",
+        "fssh": "block-q-building",
+        "fcci": "block-q-building",
+
+        "block p": "block-p-building",
+        "p": "block-p-building",
+
+        "block n": "block-n-building",
+        "n": "block-n-building",
+
+        "block m": "block-m-building",
+        "m": "block-m-building",
+        "foet": "block-m-building",
+        "fobe": "block-m-building",
+
+        "block pa": "block-pa-building",
+        "pa": "block-pa-building",
+
+        "block c": "block-c-building",
+        "c": "block-c-building",
+
+        "block b": "block-b-building",
+        "b": "block-b-building",
+
+        "block h": "block-h-building",
+        "h": "block-h-building",
 
     };
 
@@ -223,6 +288,7 @@ function initMap() {
             const targetBuilding = document.getElementById(targetSvgId);
             
             if (targetBuilding) {
+
                 targetBuilding.classList.add('building-highlight');
                 
                 // --- Your existing PanZoom math ---
