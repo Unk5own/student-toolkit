@@ -565,7 +565,15 @@ function renderAttendanceUI() {
         
         let attendancePct = totalHours > 0 ? (((totalHours - missed) / totalHours) * 100).toFixed(2) : 100.00;
         
-        let safeColor = remainingSkips > 0 ? '#28a745' : 'var(--danger)'; 
+        let safeColor;
+        if (remainingSkips > 1) {
+            safeColor = '#28a745'; // Green: Safe
+        } else if (remainingSkips === 1 || remainingSkips === 0) {
+            safeColor = '#ffc107'; // Yellow: Warning, borderline!
+        } else {
+            safeColor = 'var(--danger)'; // Red: Failed attendance
+        }
+
         let pctColor = attendancePct >= 80 ? '#28a745' : 'var(--danger)';
 
         const deleteButtonHtml = currentTab === 'custom' 
@@ -908,4 +916,17 @@ function calculateTargets() {
             </div>
         `;
     }
+}
+
+
+
+// ==========================================
+// 1. PWA SERVICE WORKER REGISTRATION
+// ==========================================
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('PWA Registered!', reg.scope))
+      .catch(err => console.log('PWA Failed!', err));
+  });
 }
