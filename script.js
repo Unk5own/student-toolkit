@@ -130,6 +130,7 @@ function initMap() {
         "yum yum canteen": "yumyum-building",
         "yumyum": "yumyum-building",
         "block l": "yumyum-building",
+        "l": "yumyum-building",
         "dfm": "yumyum-building",
 
         "sc canteen": "block-sc-building",
@@ -156,7 +157,8 @@ function initMap() {
         "dfin": "tun-tan-siew-sin-building",
 
         "block k": "block-k-building",
-
+        "k": "block-k-building",
+        
         "dk b": "dk-b-building",
         "dkb": "dk-b-building",
 
