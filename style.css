@@ -91,7 +91,7 @@ body {
     align-items: center;
     gap: 8px;
     text-decoration: none;
-    padding: 10px 22px; 
+    padding: 10px 23px 10px 21px;
     border-radius: 50px; 
     background: var(--input-bg);
     border: 1px solid var(--border);
@@ -100,6 +100,12 @@ body {
     font-size: 0.95rem;
     transition: all 0.2s ease;
     cursor: pointer;
+    line-height: 1;
+  
+}
+
+.btn-back svg {
+    transform: translateY(1px); 
 }
 
 .btn-back:hover {
@@ -326,7 +332,7 @@ body {
 
 /* Special highlight rule for the Arena image */
 #tarumt-arena.building-highlight {
-    fill: url(#pattern16_2003_13) !important; 
+    fill: url(#pattern1_2131_10) !important; 
     stroke: none !important; 
     
     /* THE UPGRADE: Stacked shadows for a massive glow + brighter image */
@@ -397,3 +403,64 @@ body {
     }
 }
 
+.map-controls-right {
+    position: absolute;
+    bottom: 80px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    z-index: 100; /* Ensures it sits above the map */
+}
+
+/* Base button styling */
+.map-control-btn {
+    width: 45px;
+    height: 45px;
+    position: relative; /* Needed for the ::before background */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    text-decoration: none;
+    border: none;
+    background: transparent;
+    color: var(--text-main);
+}
+
+/* The background circle (separated from the icon) */
+.map-control-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 50%;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    transition: transform 0.2s ease, border-color 0.2s ease;
+    z-index: -1; /* Pushes the circle behind the icon */
+}
+
+/* Ensure the SVG icon sits on top and changes color */
+.map-control-btn svg {
+    position: relative;
+    z-index: 1;
+    transition: color 0.2s ease;
+}
+
+/* Hover Effects */
+.map-control-btn:hover::before {
+    transform: scale(1.1); /* Only the background circle scales up! */
+    border-color: #007bff; /* Optional: blue border on hover */
+}
+
+.map-control-btn:hover svg {
+    color: #007bff; /* Icon turns blue, but does NOT scale! */
+}
+
+.map-control-btn:active::before {
+    transform: scale(0.95); /* Circle squishes down on click */
+}

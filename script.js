@@ -6,7 +6,7 @@ window.onload = function() {
     
     if (document.getElementById('course-list')) {
         initGPACalculator(); 
-    } else if (document.getElementById('attendance-list') || document.getElementById('y2s2-container')) {
+    } else if (document.getElementById('attendance-list') || document.getElementById('y2s3-container')) {
         initAttendanceTracker(); 
     } else if (document.getElementById('tarumt-map')) {
         initMap(); 
@@ -39,18 +39,18 @@ function initMap() {
     const containerWidth = mapContainer.clientWidth;
     const containerHeight = mapContainer.clientHeight;
     
-    const defaultScale = Math.min(1, containerWidth / 1440);
+    const defaultScale = Math.min(1, containerWidth / 1496);
 
     // Center the SVG inside container
-    const startX = (containerWidth - (1440 * defaultScale)) / 2;
-    const startY = (containerHeight - (770 * defaultScale))/ 2;
+    const startX = (containerWidth - (1496 * defaultScale)) / 2;
+    const startY = (containerHeight - (963 * defaultScale)) / 2;
 
     
     const myPanzoom = panzoom(mapElement, {
         maxZoom: 5,               
-        minZoom: 0.7,     
+        minZoom: 0.6,     
         bounds: true,             
-        boundsPadding: 0.07,      
+        boundsPadding: 0.1,      
         smoothScroll: false,      
         zoomDoubleClickSpeed: 1,     
              
@@ -62,59 +62,98 @@ function initMap() {
     // Apply centered default position
     myPanzoom.zoomAbs(0, 0, defaultScale);
     myPanzoom.moveTo(startX, startY);
-    
+
+    // =========================================================
+    // NEW: RECENTER BUTTON LOGIC (FULL FACTORY RESET)
+    // =========================================================
+    const recenterBtn = document.getElementById('recenter-map');
+    if (recenterBtn) {
+        recenterBtn.addEventListener('click', (e) => {
+            e.preventDefault(); 
+            
+            const currentContainerWidth = mapContainer.clientWidth;
+            const currentContainerHeight = mapContainer.clientHeight;
+            
+            const mapBaseWidth = 1496;
+            const mapBaseHeight = 963;
+            
+            const newDefaultScale = Math.min(1, currentContainerWidth / mapBaseWidth);
+            const newStartX = (currentContainerWidth - (mapBaseWidth * newDefaultScale)) / 2;
+            const newStartY = (currentContainerHeight - (mapBaseHeight * newDefaultScale)) / 2;
+
+            // 2. Reset Pan & Zoom
+            myPanzoom.moveTo(0, 0); 
+            myPanzoom.zoomAbs(0, 0, newDefaultScale);
+            myPanzoom.moveTo(newStartX, newStartY);
+
+        });
+    }
+
     // 2. The Campus Directory (Map search terms to your SVG IDs)
     const campusDirectory = {
         "library": "library-building",
+        "sunnydae": "library-building",
 
         "citc": "citc-building",
+        "fm cafe": "citc-building",
         
         "dtar": "dtar-building",
         "dewan tunku abdul rahman": "dtar-building",
         "hall": "dtar-building",
+        "block t": "dtar-building",
 
-        "se": "se-building",
+        "se": "block-se-building",
         
         "clubhouse": "clubhouse-building",
         "club house": "clubhouse-building",
+        "heritage kitchen": "clubhouse-building",
         
-        "sport complex": "sportscomplex-building",
+        "sports complex": "block-ua-building",
+        "block ua": "block-ua-building",
 
         "swimming pool": "swimming-pool",
 
-        "taruc hostel": "taruc-hostel",
-        "tarumt hostel": "taruc-hostel",
+        "taruc hostel": "taruc-hostel-building",
+        "tarumt hostel": "taruc-hostel-building",
 
         "vtar institute": "vtar-building",
         
         "kindergarden": "tarumt-kindergarden",
         "taska & tadika cece": "tarumt-kindergarden",
 
-        "red bricks canteen": "red-brick-canteen-building",
-        "red bricks cafeteria": "red-brick-canteen-building",
-        "redbrick": "red-brick-canteen-building",
-        "red brick": "red-brick-canteen-building",
-        "rb": "red-brick-canteen-building",
+        "red bricks canteen": "redbricks-building",
+        "red bricks cafeteria": "redbricks-building",
+        "redbricks": "redbricks-building",
+        "red bricks": "redbricks-building",
+        "rb": "redbricks-building",
 
-        "yum yum canteen": "yum-yum-canteen-building",
-        "yumyum": "yum-yum-canteen-building",
+        "yum yum canteen": "yumyum-building",
+        "yumyum": "yumyum-building",
+        "block l": "yumyum-building",
+        "dfm": "yumyum-building",
 
-        "sc canteen": "sc-canteen-building",
+        "sc canteen": "block-sc-building",
+        "casuarina cafe": "block-sc-building",
 
         "tarumt arena": "tarumt-arena",
         "ta": "tarumt-arena",
+        "dos": "tarumt-arena",
+        "cpe": "tarumt-arena",
+        "cbeiv": "tarumt-arena",
 
         "block a": "block-a-building",
         "a": "block-a-building",
-        "focs": "block-a-building",
-        "foas": "block-a-building",
-        "deca": "block-a-building",
         "dsa": "block-a-building",
-        "diso": "block-a-building",
+        "dar": "block-a-building",
+        "deca": "block-a-building",
+        "foas": "block-a-building",
+        "focs": "block-a-building",
+
         
         "bangunan tun tan siew sin": "tun-tan-siew-sin-building",
         "dace": "tun-tan-siew-sin-building",
-        "bursary": "tun-tan-siew-sin-building",
+        "diso": "tun-tan-siew-sin-building",
+        "dfin": "tun-tan-siew-sin-building",
 
         "block k": "block-k-building",
 
@@ -184,25 +223,24 @@ function initMap() {
         "dk abf": "dk-abe-abf-building",
         "dkabf":"dk-abe-abf-building",
 
-        "sg": "sg-building",
+        "sg": "block-sg-building",
 
-        "sf": "sf-building",
+        "sf": "block-sf-building",
 
-        "sd": "sd-building",
+        "sd": "block-sd-building",
 
-        "sa": "sa-building",
-        "fafb": "sa-building",
-        "cpe": "sa-building",
-        "cbiev": "sa-building",
+        "sa": "block-sa-building",
+        "fafb": "block-sa-building",
 
-        "sb": "sb-building",
+        "sb": "block-sb-building",
+        "cpsr": "block-sb-building",
 
         "block s": "block-s-building",
         "s": "block-s-building",
 
-        "fern house": "fern-house-building",
-        "block z": "fern-house-building",
-        "z": "fern-house-building",
+        "fern house": "block-z-building",
+        "block z": "block-z-building",
+        "z": "block-z-building",
 
         "block y": "block-y-building",
         "y": "block-y-building",
@@ -249,6 +287,12 @@ function initMap() {
 
         "block h": "block-h-building",
         "h": "block-h-building",
+        
+        "block d": "block-d-building",
+        "d": "block-d-building",
+
+        "the rimba": "the-rimba",
+        "rimba": "the-rimba",
 
     };
 
@@ -361,7 +405,6 @@ const syllabusDatabase = {
             { code: "BMIT2023", name: "Web and Mobile Systems", credits: 3 },
             { code: "BMIT2083", name: "Information Assurance and Security", credits: 3 },
             { code: "MPU-3133", name: "Falsafah dan Isu Semasa", credits: 3 },
-            { code: "BJEL1723", name: "Academic English", credits: 3 }
         ]
     },
     "Y3": {
@@ -505,17 +548,16 @@ function resetAll() {
 /* ==============================================================
    3. ATTENDANCE TRACKER LOGIC (PRECISE HOURS)
 ============================================================== */
-const y2s2AttendanceData = [
-    { id: "MPU-3232", code: "MPU-3232", name: "Entrepreneurship", l: 1, t: 1, p: 0, weeks: 14 },
-    { id: "BMIT2183", code: "BMIT2183", name: "Software Security", l: 2, t: 0, p: 2, weeks: 14 },
-    { id: "BMIT3143", code: "BMIT3143", name: "Digital Forensics", l: 2, t: 0, p: 2, weeks: 14 },
-    { id: "BMCS2053", code: "BMCS2053", name: "Object-Oriented Analysis", l: 2, t: 1, p: 1, weeks: 14 },
-    { id: "BMIT2203", code: "BMIT2203", name: "Human Computer Interaction", l: 2, t: 1, p: 1, weeks: 14 },
-    { id: "BMIT3084", code: "BMIT3084", name: "Enterprise Networking", l: 2, t: 1, p: 2, weeks: 14 }
+const y2s3AttendanceData = [
+    { id: "BMCS2003", code: "BMCS2003", name: "ARTIFICIAL INTELLIGENCE", l: 2, t: 1, p: 2, weeks: 14 },
+    { id: "BMIT2023", code: "BMIT2023", name: "WEB AND MOBILE SYSTEMS", l: 2, t: 0, p: 2, weeks: 14 },
+    { id: "BMIT2083", code: "BMIT2083", name: "INFORMATION ASSURANCE AND SECURITY", l: 2, t: 1, p: 0, weeks: 14 },
+    { id: "BMIT3173", code: "BMIT3173", name: "INTEGRATIVE PROGRAMMING", l: 2, t: 0, p: 2, weeks: 14 },
+    { id: "MPU-3133", code: "BMIT2203", name: "FALSAFAH DAN ISU SEMASA", l: 0, t: 1, p: 0, weeks: 14 },
 ];
 
 let customSubjects = [];
-let currentTab = 'y2s2';
+let currentTab = 'y2s3';
 
 function initAttendanceTracker() {
     const savedCustom = localStorage.getItem('custom-attendance');
@@ -525,35 +567,35 @@ function initAttendanceTracker() {
 
 function switchTab(tab) {
     currentTab = tab;
-    const btnY2S2 = document.getElementById('tab-y2s2');
+    const btnY2S3 = document.getElementById('tab-y2s3');
     const btnCustom = document.getElementById('tab-custom');
-    const contY2S2 = document.getElementById('y2s2-container');
+    const contY2S3 = document.getElementById('y2s3-container');
     const contCustom = document.getElementById('custom-container');
 
-    if (tab === 'y2s2') {
-        btnY2S2.style.color = 'var(--danger)';
-        btnY2S2.style.borderBottomColor = 'var(--danger)';
+    if (tab === 'y2s3') {
+        btnY2S3.style.color = 'var(--danger)';
+        btnY2S3.style.borderBottomColor = 'var(--danger)';
         btnCustom.style.color = 'var(--text-muted)';
         btnCustom.style.borderBottomColor = 'transparent';
-        contY2S2.style.display = 'block';
+        contY2S3.style.display = 'block';
         contCustom.style.display = 'none';
     } else {
         btnCustom.style.color = 'var(--danger)';
         btnCustom.style.borderBottomColor = 'var(--danger)';
-        btnY2S2.style.color = 'var(--text-muted)';
-        btnY2S2.style.borderBottomColor = 'transparent';
+        btnY2S3.style.color = 'var(--text-muted)';
+        btnY2S3.style.borderBottomColor = 'transparent';
         contCustom.style.display = 'block';
-        contY2S2.style.display = 'none';
+        contY2S3.style.display = 'none';
     }
     renderAttendanceUI();
 }
 
 function renderAttendanceUI() {
-    const container = currentTab === 'y2s2' ? document.getElementById('y2s2-container') : document.getElementById('custom-container');
+    const container = currentTab === 'y2s3' ? document.getElementById('y2s3-container') : document.getElementById('custom-container');
     if (!container) return;
     
     container.innerHTML = '';
-    const dataList = currentTab === 'y2s2' ? y2s2AttendanceData : customSubjects;
+    const dataList = currentTab === 'y2s3' ? y2s3AttendanceData : customSubjects;
 
     dataList.forEach(subject => {
         let missed = parseInt(localStorage.getItem(`missed-${subject.id}`)) || 0;
@@ -683,14 +725,14 @@ function saveCustomSubject() {
 
 function resetAttendance() {
     if(confirm("🚨 Reset all hours missed to zero?")) {
-        y2s2AttendanceData.forEach(sub => localStorage.removeItem(`missed-${sub.id}`));
+        y2s3AttendanceData.forEach(sub => localStorage.removeItem(`missed-${sub.id}`));
         customSubjects.forEach(sub => localStorage.removeItem(`missed-${sub.id}`));
         renderAttendanceUI();
     }
 }
 
 window.addEventListener('resize', () => {
-    if (document.getElementById('attendance-list') || document.getElementById('y2s2-container')) {
+    if (document.getElementById('attendance-list') || document.getElementById('y2s3-container')) {
         renderAttendanceUI();
     }
 });
@@ -700,11 +742,10 @@ window.addEventListener('resize', () => {
    4. MARKS CALCULATOR LOGIC
 ============================================================== */
 const subjectAssessments = {
-    "BMIT3084": { final: 40, cw: [{ name: "Test", weight: 24 }, { name: "Practical Assessment", weight: 36 }] },
-    "BMIT2203": { final: 50, cw: [{ name: "Test", weight: 15 }, { name: "Assignment", weight: 35 }] },
-    "BMCS2053": { final: 50, cw: [{ name: "Test", weight: 20 }, { name: "Assignment", weight: 30 }] },
-    "BMIT2183": { final: 30, cw: [{ name: "Test", weight: 28 }, { name: "Assignment", weight: 28 }, { name: "Practical", weight: 14 }] },
-    "BMIT3143": { final: 30, cw: [{ name: "Test", weight: 28 }, { name: "Assignment", weight: 28 }, { name: "Practical", weight: 14 }] }
+    "BMCS2003": { final: 30, cw: [{ name: "Test", weight: 28 }, { name: "Assignment", weight: 42 }] },
+    "BMIT2023": { final: 30, cw: [{ name: "Test", weight: 14 }, { name: "Assignment", weight: 56 }] },
+    "BMIT2083 ": { final: 50, cw: [{ name: "Test", weight: 20 }, { name: "Assignment", weight: 25 }, {name: "Quiz", weight: 5}] },
+    "BMIT3173": { final: 30, cw: [{ name: "Quiz", weight: 7 }, { name: "Assignment", weight: 63 }] },
 };
 
 function renderInterface() {
