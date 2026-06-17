@@ -464,3 +464,109 @@ body {
 .map-control-btn:active::before {
     transform: scale(0.95); /* Circle squishes down on click */
 }
+
+
+/* ==============================================================
+   9. PROFILE / SETUP PAGE
+============================================================== */
+.profile-body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: var(--bg-color); /* Uses your global theme */
+    margin: 0;
+}
+
+.profile-card {
+    background: var(--input-bg);
+    padding: 40px;
+    border-radius: 24px; /* Matches your welcome banner */
+    border: 1px solid var(--border);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    width: 100%;
+    max-width: 450px;
+    text-align: center;
+    animation: fadeUp 0.6s ease-out; /* Reusing your existing animation! */
+}
+
+.profile-card h2 {
+    margin-top: 0;
+    color: var(--text-main);
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+}
+
+.profile-card p {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin-bottom: 30px;
+    line-height: 1.5;
+}
+
+.profile-card .form-group {
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+.profile-card .form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text-main);
+    font-size: 0.95rem;
+}
+
+/* Custom Dropdown Styling to match your aesthetic */
+.input-dropdown {
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 1rem;
+    background-color: var(--bg-color); /* Slight contrast from the card */
+    color: var(--text-main);
+    border: 1px solid var(--border);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    appearance: none; /* Hides default browser arrow */
+    
+    /* Custom SVG Arrow that works in light/dark mode */
+    background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236c757d%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+    background-repeat: no-repeat;
+    background-position: right 15px top 50%;
+    background-size: 12px auto;
+}
+
+.input-dropdown:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
+}
+
+/* Primary Button Styling */
+.btn-primary {
+    width: 100%;
+    padding: 14px;
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 15px;
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2);
+}
+
+.btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(13, 110, 253, 0.3);
+}
+
+.btn-primary:disabled {
+    background-color: var(--border);
+    color: var(--text-muted);
+    cursor: not-allowed;
+    box-shadow: none;
+}

@@ -1,18 +1,18 @@
 // Change this to v2, v3, etc., whenever you update your files!
-const CACHE_NAME = 'tarumt-toolkit-v1';
+const CACHE_NAME = 'tarumt-toolkit-v4';
 
 // List EVERY file your app needs to work offline
 const urlsToCache = [
   './',
   './index.html',
-  './map.html',
   './attendance.html',
   './calculator.html',
   './marks.html',
+  './map.html',
   './style.css',
   './script.js',
+  './university.json',
   './manifest.json'
-  // Remember to add your map SVG or image files here too!
 ];
 
 // 1. Install Event: Download and cache all files
