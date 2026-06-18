@@ -372,44 +372,98 @@ function initMap() {
 // Global variables for the calculator
 let universityData = null;
 let currentProgramme = "RIS"; // Default fallback
-let currentTermQP = 0;      // Quality Points for current semester
-let currentTermCredits = 0; // Credits for current semester
+let currentTermQP = 0;      
+let currentTermCredits = 0; 
 
 // Standard TAR UMT Grade Scale
 const gradeScale = {
-    "A": 4.00, "A-": 3.75, "B+": 3.50, "B": 3.00, 
-    "B-": 2.75, "C+": 2.50, "C": 2.00, "F": 0.00
+    "A": 4.00, "A-": 3.67, "B+": 3.33, "B": 3.00, 
+    "B-": 2.67, "C+": 2.33, "C": 2.00, "F": 0.00
 };
 
-// 1. Initialize the Calculator when the page loads
+// 1. Initialize the Calculator
 window.initGPACalculator = async function() {
     const yearSelect = document.getElementById('year-select');
-    if (!yearSelect) return; 
+    const semSelect = document.getElementById('sem-select');
+    if (!yearSelect || !semSelect) return; 
 
-    // Load user profile from Local Storage
     const savedProfileJSON = localStorage.getItem('studentProfile');
-    let defaultTerm = "Y2S2"; // Default fallback
+    let defaultYear = "2"; 
+    let defaultSem = "2";
     
     if (savedProfileJSON) {
         const profile = JSON.parse(savedProfileJSON);
         currentProgramme = profile.programme;
-        defaultTerm = profile.semester; // e.g., "Y2S2"
-        
-        // Auto-set the dropdowns to match their saved profile
-        document.getElementById('year-select').value = defaultTerm.substring(0, 2); 
-        document.getElementById('sem-select').value = defaultTerm.substring(2, 4);  
+        if(profile.semester) {
+            defaultYear = profile.semester.substring(1, 2); 
+            defaultSem = profile.semester.substring(3, 4);  
+        }
     }
 
-    // Fetch the course database
-    try {
-        const response = await fetch('university.json');
-        universityData = await response.json();
+    // Hook into data.js
+    if (typeof myDatabase !== 'undefined') {
+        universityData = myDatabase;
+        const programmeData = universityData.programmes[currentProgramme];
         
-        // Load the subjects for the selected term
-        loadTermSubjects();
-    } catch (error) {
-        console.error("Failed to load university.json:", error);
-        document.getElementById('course-list').innerHTML = "<p style='color: var(--danger);'>Error loading courses. Make sure university.json is in the same folder.</p>";
+        if (programmeData && programmeData.curriculum) {
+            // Populate Years dynamically
+            const keys = Object.keys(programmeData.curriculum);
+            const years = [...new Set(keys.map(k => k.substring(1, 2)))].sort();
+            
+            yearSelect.innerHTML = '';
+            years.forEach(year => {
+                const option = document.createElement('option');
+                option.value = `Y${year}`;
+                option.textContent = `Year ${year}`;
+                yearSelect.appendChild(option);
+            });
+
+            // Set to saved Year
+            if(yearSelect.querySelector(`option[value="Y${defaultYear}"]`)) {
+                yearSelect.value = `Y${defaultYear}`;
+            }
+
+            // Populate Semesters dynamically based on Year
+            updateCalculatorSemesters();
+
+            // Set to saved Semester
+            if(semSelect.querySelector(`option[value="S${defaultSem}"]`)) {
+                semSelect.value = `S${defaultSem}`;
+            }
+
+            // Load the subjects!
+            loadTermSubjects();
+        }
+    } else {
+        console.error("Database not found!");
+        document.getElementById('course-list').innerHTML = "<p style='color: var(--danger);'>Error loading data.js</p>";
+    }
+}
+
+// 1.5 Update Semesters when Year changes
+window.updateCalculatorSemesters = function() {
+    const yearSelect = document.getElementById('year-select');
+    const semSelect = document.getElementById('sem-select');
+    if(!universityData || !yearSelect || !semSelect) return;
+
+    const yearVal = yearSelect.value.replace('Y', '');
+    const programmeData = universityData.programmes[currentProgramme];
+    
+    semSelect.innerHTML = '';
+
+    if (programmeData && programmeData.curriculum) {
+        const keys = Object.keys(programmeData.curriculum);
+        const sems = keys
+            .filter(k => k.startsWith(`Y${yearVal}`))
+            .map(k => k.substring(3, 4))
+            .sort();
+            
+        sems.forEach(sem => {
+            const option = document.createElement('option');
+            option.value = `S${sem}`;
+            option.textContent = `Semester ${sem}`;
+            semSelect.appendChild(option);
+        });
     }
 }
 
@@ -419,22 +473,22 @@ window.loadTermSubjects = function() {
 
     const year = document.getElementById('year-select').value;
     const sem = document.getElementById('sem-select').value;
-    const termKey = year + sem; // e.g., "Y2S2"
+    const termKey = year + sem; 
 
     const courseListContainer = document.getElementById('course-list');
-    courseListContainer.innerHTML = ''; // Clear old courses
+    courseListContainer.innerHTML = ''; 
 
-    // Drill down into the JSON
     const programmeData = universityData.programmes[currentProgramme];
     const courses = programmeData.curriculum[termKey];
 
     if (!courses || courses.length === 0) {
         courseListContainer.innerHTML = `<p style="color: var(--text-muted); text-align: center; padding: 20px;">No courses found for ${termKey}.</p>`;
-        resetScores();
+        // Reset GPA if empty
+        document.getElementById('gpa-score').textContent = "0.0000";
+        calculateCGPA();
         return;
     }
 
-    // Build the HTML for each course
     courses.forEach((course, index) => {
         const row = document.createElement('div');
         row.style.display = 'flex';
@@ -452,11 +506,11 @@ window.loadTermSubjects = function() {
             <select class="styled-select grade-select" style="width: 130px; cursor: pointer;" data-credits="${course.credits}" onchange="calculateGPA()">
                 <option value="" selected disabled>Grade</option>
                 <option value="4.00">A (4.00)</option>
-                <option value="3.75">A- (3.75)</option>
-                <option value="3.50">B+ (3.50)</option>
+                <option value="3.67">A- (3.67)</option>
+                <option value="3.33">B+ (3.33)</option>
                 <option value="3.00">B (3.00)</option>
-                <option value="2.75">B- (2.75)</option>
-                <option value="2.50">C+ (2.50)</option>
+                <option value="2.67">B- (2.67)</option>
+                <option value="2.33">C+ (2.33)</option>
                 <option value="2.00">C (2.00)</option>
                 <option value="0.00">F (0.00)</option>
             </select>
@@ -464,7 +518,6 @@ window.loadTermSubjects = function() {
         courseListContainer.appendChild(row);
     });
 
-    // Reset calculators when switching terms
     calculateGPA(); 
 }
 
@@ -494,7 +547,6 @@ window.calculateGPA = function() {
         gpaScoreElement.textContent = "0.0000";
     }
 
-    // Instantly update the CGPA whenever the Semester GPA changes!
     calculateCGPA();
 }
 
@@ -507,7 +559,6 @@ window.calculateCGPA = function() {
     const prevCgpa = parseFloat(prevCgpaInput) || 0;
     const prevCredits = parseInt(prevCreditsInput) || 0;
 
-    // Math: Previous Quality Points + Current Semester Quality Points
     const prevQP = prevCgpa * prevCredits;
     const totalQP = prevQP + currentTermQP;
     const totalCredits = prevCredits + currentTermCredits;
@@ -521,17 +572,15 @@ window.calculateCGPA = function() {
 }
 
 // 5. Reset everything
-function resetAll() {
+window.resetAll = function() {
     if(confirm("Are you sure you want to clear all inputs?")) {
-        // Reset Semester Dropdowns
         const gradeSelects = document.querySelectorAll('.grade-select');
         gradeSelects.forEach(select => select.value = "");
         
-        // Reset CGPA Inputs
         document.getElementById('prev-cgpa').value = "";
         document.getElementById('prev-credits').value = "";
         
-        calculateGPA(); // This will reset the scores back to 0.0000
+        calculateGPA(); 
     }
 }
 
@@ -766,31 +815,39 @@ window.switchTab = function(tabName) {
    TARGET MARKS CALCULATOR LOGIC
 ============================================================== */
 
-async function initMarksCalculator() {
+function initMarksCalculator() {
     const subjectSelect = document.getElementById('marks-subject');
     if (!subjectSelect) return; // Exit if not on marks.html
 
     const profileJSON = localStorage.getItem('studentProfile');
     if (!profileJSON) {
-        alert("Please set up your profile first!");
-        window.location.href = "profile.html";
+        alert("Please set up your profile on the Home dashboard first!");
+        window.location.href = "index.html";
         return;
     }
 
     const profile = JSON.parse(profileJSON);
     
     try {
-        const response = await fetch('university.json');
-        const data = await response.json();
-        const currentCourses = data.programmes[profile.programme].curriculum[profile.semester];
-        
-        // Populate the dropdown with the user's specific subjects!
-        subjectSelect.innerHTML = '<option value="">-- Choose Subject --</option>';
-        currentCourses.forEach(course => {
-            subjectSelect.innerHTML += `<option value="${course.code}">${course.code} - ${course.name}</option>`;
-        });
-        
-        renderInterface(); // Initialize the empty state
+        // Use the global myDatabase variable from data.js instead of fetching
+        if (typeof myDatabase !== 'undefined') {
+            const currentCourses = myDatabase.programmes[profile.programme].curriculum[profile.semester];
+            
+            // Populate the dropdown with the user's specific subjects!
+            subjectSelect.innerHTML = '<option value="">-- Choose Subject --</option>';
+            if (currentCourses) {
+                currentCourses.forEach(course => {
+                    subjectSelect.innerHTML += `<option value="${course.code}">${course.code} - ${course.name}</option>`;
+                });
+            } else {
+                 subjectSelect.innerHTML = '<option value="">No subjects found for this semester</option>';
+            }
+            
+            renderInterface(); // Initialize the empty state
+        } else {
+            console.error("Database not found! Make sure data.js is linked in HTML.");
+            subjectSelect.innerHTML = '<option value="">Error loading database</option>';
+        }
         
     } catch(e) {
         console.error("Error loading subjects for Marks Calculator:", e);
@@ -929,7 +986,7 @@ window.calculateFinalTargets = function() {
     document.getElementById('marks-result-section').scrollIntoView({ behavior: 'smooth' });
 }
 
-// Logic for Mode 2: Reverse Calculation (using your exact provided snippet layout!)
+// Logic for Mode 2: Reverse Calculation
 window.calculateReverse = function() {
     const name = document.getElementById('rev-name').value || "Missing Component";
     const weight = parseFloat(document.getElementById('rev-weight').value);
@@ -959,7 +1016,6 @@ window.calculateReverse = function() {
     document.getElementById('marks-result-section').style.display = 'block';
     document.getElementById('marks-result-section').scrollIntoView({ behavior: 'smooth' });
 }
-
 
 
 // ==========================================
