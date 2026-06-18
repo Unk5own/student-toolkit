@@ -1,0 +1,127 @@
+const myDatabase = {
+  "programmes": {
+    "RIS": {
+      "title": "BACHELOR IN INFORMATION TECHNOLOGY (HONOURS) (INFORMATION SECURITY)",
+      "curriculum": {
+        "Y1S1": [
+          { "code": "BMIS1043", "name": "SYSTEMS ANALYSIS AND DESIGN", "credits": 3 },
+          { "code": "BJEL1713", "name": "ENGLISH FOR TERTIARY STUDIES", "credits": 3 },
+          { "code": "MPU-3103", "name": "PENGHAYATAN ETIKA DAN PERADABAN", "credits": 3 }
+        ],
+        "Y1S2": [
+          { "code": "BMCS1013", "name": "PROBLEM SOLVING AND PROGRAMMING", "credits": 3 },
+          { "code": "BMCS1053", "name": "DATABASE MANAGEMENT", "credits": 3 },
+          { "code": "BMCS1113", "name": "COMPUTER ORGANISATION AND ARCHITECTURE", "credits": 3 },
+          { "code": "BMIT1173", "name": "IT FUNDAMENTALS", "credits": 3 }
+        ],
+        "Y1S3": [
+          { "code": "BMCS2023", "name": "OBJECT-ORIENTED PROGRAMMING", "credits": 3 },
+          { "code": "BMCS2093", "name": "OPERATING SYSTEMS", "credits": 3 },
+          { "code": "BMIT2004", "name": "FUNDAMENTALS OF COMPUTER NETWORKS", "credits": 4 },
+          { "code": "BMIT1023", "name": "WEB DESIGN AND DEVELOPMENT", "credits": 3 },
+          { "code": "MPU-3302", "name": "INTEGRITY AND ANTI-CORRUPTION", "credits": 2 }
+        ],
+        "Y2S1": [
+          { "code": "BMMS1653", "name": "DISCRETE STRUCTURES", "credits": 3 },
+          { "code": "BMIT2043", "name": "INTRODUCTION TO INTERNET SECURITY", "credits": 3 },
+          { "code": "BMIT2154", "name": "SWITCHING AND ROUTING TECHNOLOGIES", "credits": 4 }
+        ],
+        "Y2S2": [
+          { "code": "BMCS2053", "name": "OBJECT-ORIENTED ANALYSIS AND DESIGN", "credits": 3 },
+          { "code": "BMIT2203", "name": "HUMAN COMPUTER INTERACTION", "credits": 3 },
+          { "code": "BMIT3084", "name": "ENTERPRISE NETWORKING", "credits": 4 },
+          { "code": "BMIT2183", "name": "SOFTWARE SECURITY", "credits": 3 },
+          { "code": "BMIT3143", "name": "DIGITAL FORENSICS", "credits": 3 },
+          { "code": "MPU-3232", "name": "ENTREPRENEURSHIP", "credits": 2}   
+        ],
+        "Y2S3": [
+          { "code": "ECOQ", "name": "CO-CURRICULAR", "credits": 2 },
+          { "code": "BMCS2003", "name": "ARTIFICIAL INTELLIGENCE", "credits": 3 },
+          { "code": "BMIT3173", "name": "INTEGRATIVE PROGRAMMING", "credits": 3 },
+          { "code": "BMIT2023", "name": "WEB AND MOBILE SYSTEMS", "credits": 3 },
+          { "code": "BMIT2083", "name": "INFORMATION ASSURANCE AND SECURITY", "credits": 3 },
+          { "code": "MPU-3133", "name": "FALSAFAH DAN ISU SEMASA", "credits": 3 }
+        ],
+        "Y3S1": [
+          { "code": "BMCS3404", "name": "PROJECT I", "credits": 4 },
+          { "code": "BMIT3273", "name": "CLOUD COMPUTING", "credits": 3 },
+          { "code": "BMIS2113", "name": "INFORMATION TECHNOLOGY INFRASTRUCTURE", "credits": 3 }
+        ],
+        "Y3S2": [
+          { "code": "BMCS3414", "name": "PROJECT II", "credits": 4 },
+          { "code": "BMCS3183", "name": "ADVANCED DATABASE MANAGEMENT", "credits": 3 },
+          { "code": "BMIT3123", "name": "VULNERABILITY ASSESSMENT AND PENETRATION TESTING", "credits": 3 },
+          { "code": "BMIT3113", "name": "SYSTEMS ADMINISTRATION", "credits": 3 },
+          { "code": "BMSE3153", "name": "SOFTWARE PROJECT MANAGEMENT", "credits": 3 },
+          { "code": "BJEL2013", "name": "ENGLISH FOR CAREER PREPARATION", "credits": 3 }
+        ],
+        "Y3S3": [
+          { "code": "BMIT305A", "name": "INDUSTRIAL TRAINING", "credits": 10 }
+        ]
+      }
+    },
+    "RFI": {
+      "title": "BACHELOR OF FINANCE AND INVESTMENT (HONOURS)",
+      "curriculum": {
+        "Y1S1": [
+          { "code": "BMIT1723", "name": "IT FUNDAMENTALS AND APPLICATIONS", "credits": 3 },
+          { "code": "BBBE1033", "name": "ECONOMICS", "credits": 3 },
+          { "code": "BMMS1753", "name": "FINANCIAL MATHEMATICS", "credits": 3 },
+          { "code": "BBFA1043", "name": "PRINCIPLES OF ACCOUNTING", "credits": 3 },
+          { "code": "BBDT1013", "name": "PRINCIPLES OF MARKETING", "credits": 3 }       
+        ],
+        "Y1S2": [
+          { "code": "BJEL1713", "name": "ENGLISH FOR TERTIARY STUDIES", "credits": 3 }
+        ],
+        "Y1S3": [
+          { "code": "BBFA1063", "name": "FINANCIAL ACCOUNTING", "credits": 3 },
+          { "code": "BBDM1023", "name": "BUSINESS ORGANISATION & MANAGEMENT", "credits": 3 },
+          { "code": "BBMF2013", "name": "PRINCIPLES OF FINANCE", "credits": 3 },
+          { "code": "BBMF2023", "name": "PRINCIPLES OF INVESTMENT", "credits": 3 },
+          { "code": "MPU-3103", "name": "PENGHAYATAN ETIKA DAN PERADABAN", "credits": 3 }
+        ],
+        "Y2S1": [
+          { "code": "BBMF2113", "name": "PERSONAL FINANCIAL PLANNING", "credits": 3 },
+          { "code": "BBBL2113", "name": "INVESTMENT INDUSTRY LAW", "credits": 3 },
+          { "code": "BBMF2044", "name": "MONEY & CAPITAL MARKETS", "credits": 4 },
+          { "code": "BBDT2123", "name": "MARKETING OF FINANCIAL SERVICES", "credits": 3 },
+          { "code": "MPU-3133", "name": "FALSAFAH DAN ISU SEMASA", "credits": 3 },
+          { "code": "BJEL1723", "name": "ACADEMIC ENGLISH", "credits": 3 }
+        ],
+        "Y2S2": [
+          { "code": "BJEL2013", "name": "ENGLISH FOR CAREER PREPARATION", "credits": 3 },
+          { "code": "BMIT2723", "name": "BUSINESS ANALYTICS FOR FINANCE", "credits": 3 },
+          { "code": "BBMF2093", "name": "CORPORATE FINANCE", "credits": 3 }
+        ],
+        "Y2S3": [
+          { "code": "BBBE2013", "name": "MONEY & BANKING", "credits": 3 },
+          { "code": "BBMF2063", "name": "INVESTMENT & FINANCIAL ANALYSIS", "credits": 3 },
+          { "code": "BBMF2073", "name": "FOREX & DERIVATIVES", "credits": 3 },
+          { "code": "BBBE2843", "name": "ECONOMETRICS", "credits": 3 },
+          { "code": "BBMF3063", "name": "FINANCIAL STATEMENT ANALYSIS", "credits": 3 },
+          { "code": "BBDM3373", "name": "ENTREPRENEURSHIP", "credits": 3 },
+          { "code": "MPU-3302", "name": "INTEGRITY AND ANTI-CORRUPTION", "credits": 2 }
+        ],
+        "Y3S1": [
+          { "code": "ECOQ", "name": "CO-CURRICULAR", "credits": 2 },
+          { "code": "BBMF3033", "name": "FINANCIAL MARKETS & REGULATIONS", "credits": 3 },
+          { "code": "BBMF3023", "name": "CORPORATE TREASURY MANAGEMENT", "credits": 3 },
+          { "code": "BBMF3173", "name": "BOND ANALYSIS", "credits": 3 },
+          { "code": "BBBD3023", "name": "CORPORATE GOVERNANCE & ETHICS", "credits": 3 },
+          { "code": "BBMF3304", "name": "EQUITY ANALYSIS", "credits": 4 },
+          { "code": "MPU-3202", "name": "SERVICE LEARNING", "credits": 2 }
+        ],
+        "Y3S2": [
+          { "code": "BBMF3935", "name": "INDUSTRIAL TRAINING", "credits": 5 }
+        ],
+        "Y3S3": [
+          { "code": "BBMF3073", "name": "RISK MANAGEMENT", "credits": 3 },
+          { "code": "BBMF3123", "name": "INTERNATIONAL FINANCE", "credits": 3 },
+          { "code": "BBMF3083", "name": "PORTFOLIO MANAGEMENT", "credits": 3 },
+          { "code": "EG04", "name": "ELECTIVE COURSE", "credits": 3 },
+          { "code": "BBMF3314", "name": "CASE STUDY IN FINANCE & INVESTMENT", "credits": 4 }
+        ]
+      }
+    }
+  }
+};
