@@ -126,17 +126,23 @@
             <p>TARUMT Academic Dashboard • <span id="current-date"></span></p>
             
             <div style="display: flex; gap: 15px; justify-content: center; margin-top: 25px; align-items: center; flex-wrap: wrap; background: var(--input-bg); padding: 15px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-                <div class="input-group-col" style="flex: 1; min-width: 200px; text-align: left;">
+                <div class="input-group-col" style="flex: 1.5; min-width: 200px; text-align: left;">
                     <label style="font-size: 0.85rem; font-weight: 600; color: var(--primary); margin-bottom: 5px;">Programme</label>
-                    <select id="programme-selector" class="styled-select" onchange="updateDashboardSemesters(); saveDashboardProfile();" style="padding: 10px;">
+                    <select id="programme-selector" class="styled-select" onchange="updateDashboardYears(); saveDashboardProfile();" style="padding: 10px;">
                         <option value="RIS">Bachelor in IT (Information Security)</option>
                         <option value="RFI">Bachelor of Finance and Investment</option>
                     </select>
                 </div>
-                <div class="input-group-col" style="flex: 1; min-width: 200px; text-align: left;">
-                    <label style="font-size: 0.85rem; font-weight: 600; color: var(--primary); margin-bottom: 5px;">Current Semester</label>
+                <div class="input-group-col" style="flex: 1; min-width: 100px; text-align: left;">
+                    <label style="font-size: 0.85rem; font-weight: 600; color: var(--primary); margin-bottom: 5px;">Year</label>
+                    <select id="year-selector" class="styled-select" onchange="updateDashboardSemestersOnly(); saveDashboardProfile();" style="padding: 10px;">
+                        <option value="">...</option>
+                    </select>
+                </div>
+                <div class="input-group-col" style="flex: 1; min-width: 100px; text-align: left;">
+                    <label style="font-size: 0.85rem; font-weight: 600; color: var(--primary); margin-bottom: 5px;">Semester</label>
                     <select id="semester-selector" class="styled-select" onchange="saveDashboardProfile();" style="padding: 10px;">
-                        <option value="">Loading...</option>
+                        <option value="">...</option>
                     </select>
                 </div>
             </div>

@@ -1,5 +1,5 @@
 // Change this to v2, v3, etc., whenever you update your files!
-const CACHE_NAME = 'tarumt-toolkit-v4';
+const CACHE_NAME = 'tarumt-toolkit-v5';
 
 // List EVERY file your app needs to work offline
 const urlsToCache = [
