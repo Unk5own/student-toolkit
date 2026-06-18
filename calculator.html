@@ -34,25 +34,8 @@
                 <div class="card-section" style="margin: 0;">
                     
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; border-bottom: 1px dashed var(--border); padding-bottom: 25px;">
-                        <div class="input-group-col">
-                            <label style="font-weight: bold; color: var(--primary); margin-bottom: 8px;">Select Year</label>
-                            <select id="year-select" class="styled-select" onchange="updateCalculatorSemesters(); loadTermSubjects();">
-                                <option value="Y1">Year 1</option>
-                                <option value="Y2" selected>Year 2</option>
-                                <option value="Y3">Year 3</option>
-                            </select>
-                        </div>
-                        <div class="input-group-col">
-                            <label style="font-weight: bold; color: var(--primary); margin-bottom: 8px;">Select Semester</label>
-                            <select id="sem-select" class="styled-select" onchange="loadTermSubjects()">
-                                <option value="S1">Semester 1</option>
-                                <option value="S2" selected>Semester 2</option>
-                                <option value="S3">Semester 3</option>
-                            </select>
-                        </div>
+                    
                     </div>
-
-                    <div id="course-list"></div>
                 </div>
 
                 <div>

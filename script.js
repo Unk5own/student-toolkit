@@ -366,130 +366,123 @@ function initMap() {
 
 
 /* ==============================================================
+   DASHBOARD INLINE PROFILE LOGIC
+============================================================== */
+let dashboardUniData = null;
+
+window.initDashboardProfile = async function() {
+    if (typeof myDatabase !== 'undefined') {
+        dashboardUniData = myDatabase;
+        const progSelector = document.getElementById('programme-selector');
+        if (progSelector) {
+            progSelector.innerHTML = '<option value="">-- Select Programme --</option>';
+            Object.keys(dashboardUniData.programmes).forEach(key => {
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = dashboardUniData.programmes[key].title;
+                progSelector.appendChild(option);
+            });
+        }
+        loadProfile();
+    }
+};
+
+window.loadProfile = function() {
+    const savedJSON = localStorage.getItem('studentProfile');
+    if (savedJSON) {
+        const profile = JSON.parse(savedJSON);
+        const progSelector = document.getElementById('programme-selector');
+        if (progSelector && profile.programme) {
+            progSelector.value = profile.programme;
+        }
+        updateWelcomeMessage(profile.programme);
+    }
+};
+
+window.saveProfile = function() {
+    const progSelector = document.getElementById('programme-selector');
+    
+    // If they select the blank default option, do nothing
+    if (!progSelector.value) {
+        return;
+    }
+    
+    // Automatically assign the exact correct semester!
+    const sem = progSelector.value === 'RIS' ? 'Y2S3' : 'Y3S1';
+    
+    const profile = {
+        programme: progSelector.value,
+        semester: sem
+    };
+    
+    // Save to local storage instantly
+    localStorage.setItem('studentProfile', JSON.stringify(profile));
+    
+    // Automatically refresh the page to apply changes to the badge and memory
+    window.location.reload();
+};
+
+window.updateWelcomeMessage = function(programmeKey) {
+    const headerTitle = document.querySelector('header h1');
+    const headerSub = document.querySelector('header .subtitle');
+    if (headerTitle && dashboardUniData) {
+        headerTitle.textContent = "Welcome back!";
+        // Only displays the Programme Title now
+        headerSub.innerHTML = `<strong>${dashboardUniData.programmes[programmeKey].title}</strong>`;
+    }
+};
+
+
+/* ==============================================================
    GPA / CGPA CALCULATOR LOGIC
 ============================================================== */
-
-// Global variables for the calculator
 let universityData = null;
-let currentProgramme = "RIS"; // Default fallback
+let currentProgramme = "RIS"; 
+let activeSemester = "Y2S3";
 let currentTermQP = 0;      
 let currentTermCredits = 0; 
 
-// Standard TAR UMT Grade Scale
-const gradeScale = {
-    "A": 4.00, "A-": 3.67, "B+": 3.33, "B": 3.00, 
-    "B-": 2.67, "C+": 2.33, "C": 2.00, "F": 0.00
-};
+// Run initGPACalculator when the DOM is fully loaded
+document.addEventListener("DOMContentLoaded", () => {
+    if (window.location.pathname.includes('calculator.html')) {
+        initGPACalculator();
+    }
+});
 
-// 1. Initialize the Calculator
 window.initGPACalculator = async function() {
-    const yearSelect = document.getElementById('year-select');
-    const semSelect = document.getElementById('sem-select');
-    if (!yearSelect || !semSelect) return; 
-
     const savedProfileJSON = localStorage.getItem('studentProfile');
-    let defaultYear = "2"; 
-    let defaultSem = "2";
     
     if (savedProfileJSON) {
         const profile = JSON.parse(savedProfileJSON);
         currentProgramme = profile.programme;
-        if(profile.semester) {
-            defaultYear = profile.semester.substring(1, 2); 
-            defaultSem = profile.semester.substring(3, 4);  
-        }
+        activeSemester = profile.semester; // Auto-pulls Y2S3 or Y3S1
     }
 
-    // Hook into data.js
     if (typeof myDatabase !== 'undefined') {
         universityData = myDatabase;
-        const programmeData = universityData.programmes[currentProgramme];
-        
-        if (programmeData && programmeData.curriculum) {
-            // Populate Years dynamically
-            const keys = Object.keys(programmeData.curriculum);
-            const years = [...new Set(keys.map(k => k.substring(1, 2)))].sort();
-            
-            yearSelect.innerHTML = '';
-            years.forEach(year => {
-                const option = document.createElement('option');
-                option.value = `Y${year}`;
-                option.textContent = `Year ${year}`;
-                yearSelect.appendChild(option);
-            });
-
-            // Set to saved Year
-            if(yearSelect.querySelector(`option[value="Y${defaultYear}"]`)) {
-                yearSelect.value = `Y${defaultYear}`;
-            }
-
-            // Populate Semesters dynamically based on Year
-            updateCalculatorSemesters();
-
-            // Set to saved Semester
-            if(semSelect.querySelector(`option[value="S${defaultSem}"]`)) {
-                semSelect.value = `S${defaultSem}`;
-            }
-
-            // Load the subjects!
-            loadTermSubjects();
-        }
+        loadTermSubjects();
     } else {
-        console.error("Database not found!");
         document.getElementById('course-list').innerHTML = "<p style='color: var(--danger);'>Error loading data.js</p>";
     }
 }
 
-// 1.5 Update Semesters when Year changes
-window.updateCalculatorSemesters = function() {
-    const yearSelect = document.getElementById('year-select');
-    const semSelect = document.getElementById('sem-select');
-    if(!universityData || !yearSelect || !semSelect) return;
-
-    const yearVal = yearSelect.value.replace('Y', '');
-    const programmeData = universityData.programmes[currentProgramme];
-    
-    semSelect.innerHTML = '';
-
-    if (programmeData && programmeData.curriculum) {
-        const keys = Object.keys(programmeData.curriculum);
-        const sems = keys
-            .filter(k => k.startsWith(`Y${yearVal}`))
-            .map(k => k.substring(3, 4))
-            .sort();
-            
-        sems.forEach(sem => {
-            const option = document.createElement('option');
-            option.value = `S${sem}`;
-            option.textContent = `Semester ${sem}`;
-            semSelect.appendChild(option);
-        });
-    }
-}
-
-// 2. Load the specific courses into the list
 window.loadTermSubjects = function() {
     if (!universityData) return;
-
-    const year = document.getElementById('year-select').value;
-    const sem = document.getElementById('sem-select').value;
-    const termKey = year + sem; 
 
     const courseListContainer = document.getElementById('course-list');
     courseListContainer.innerHTML = ''; 
 
     const programmeData = universityData.programmes[currentProgramme];
-    const courses = programmeData.curriculum[termKey];
+    const courses = programmeData.curriculum[activeSemester];
 
     if (!courses || courses.length === 0) {
-        courseListContainer.innerHTML = `<p style="color: var(--text-muted); text-align: center; padding: 20px;">No courses found for ${termKey}.</p>`;
-        // Reset GPA if empty
+        courseListContainer.innerHTML = `<p style="color: var(--text-muted); text-align: center; padding: 20px;">No courses found.</p>`;
         document.getElementById('gpa-score').textContent = "0.0000";
         calculateCGPA();
         return;
     }
 
-    courses.forEach((course, index) => {
+    courses.forEach((course) => {
         const row = document.createElement('div');
         row.style.display = 'flex';
         row.style.justifyContent = 'space-between';
@@ -521,10 +514,8 @@ window.loadTermSubjects = function() {
     calculateGPA(); 
 }
 
-// 3. Calculate the Current Semester GPA
 window.calculateGPA = function() {
     const gradeSelects = document.querySelectorAll('.grade-select');
-    
     currentTermQP = 0;
     currentTermCredits = 0;
 
@@ -532,66 +523,58 @@ window.calculateGPA = function() {
         if (select.value !== "") {
             const gradePoint = parseFloat(select.value);
             const credits = parseInt(select.getAttribute('data-credits'));
-            
             currentTermQP += (gradePoint * credits);
             currentTermCredits += credits;
         }
     });
 
     const gpaScoreElement = document.getElementById('gpa-score');
-    
     if (currentTermCredits > 0) {
-        const gpa = currentTermQP / currentTermCredits;
-        gpaScoreElement.textContent = gpa.toFixed(4);
+        gpaScoreElement.textContent = (currentTermQP / currentTermCredits).toFixed(4);
     } else {
         gpaScoreElement.textContent = "0.0000";
     }
-
     calculateCGPA();
 }
 
-// 4. Calculate the Cumulative GPA (CGPA)
 window.calculateCGPA = function() {
-    const prevCgpaInput = document.getElementById('prev-cgpa').value;
-    const prevCreditsInput = document.getElementById('prev-credits').value;
+    const prevCgpa = parseFloat(document.getElementById('prev-cgpa').value) || 0;
+    const prevCredits = parseInt(document.getElementById('prev-credits').value) || 0;
     const cgpaScoreElement = document.getElementById('cgpa-score');
 
-    const prevCgpa = parseFloat(prevCgpaInput) || 0;
-    const prevCredits = parseInt(prevCreditsInput) || 0;
-
-    const prevQP = prevCgpa * prevCredits;
-    const totalQP = prevQP + currentTermQP;
+    const totalQP = (prevCgpa * prevCredits) + currentTermQP;
     const totalCredits = prevCredits + currentTermCredits;
 
     if (totalCredits > 0) {
-        const overallCgpa = totalQP / totalCredits;
-        cgpaScoreElement.textContent = overallCgpa.toFixed(4);
+        cgpaScoreElement.textContent = (totalQP / totalCredits).toFixed(4);
     } else {
         cgpaScoreElement.textContent = "0.0000";
     }
 }
 
-// 5. Reset everything
 window.resetAll = function() {
     if(confirm("Are you sure you want to clear all inputs?")) {
-        const gradeSelects = document.querySelectorAll('.grade-select');
-        gradeSelects.forEach(select => select.value = "");
-        
+        document.querySelectorAll('.grade-select').forEach(select => select.value = "");
         document.getElementById('prev-cgpa').value = "";
         document.getElementById('prev-credits').value = "";
-        
         calculateGPA(); 
     }
 }
 
 /* ==============================================================
-   ATTENDANCE TRACKER LOGIC (MISSED CLASSES MODE)
+   ATTENDANCE TRACKER LOGIC (HOURS-BASED, LOCKED TIMETABLE)
 ============================================================== */
-
 let attendanceData = JSON.parse(localStorage.getItem('attendanceRecord')) || { semester: {}, custom: [] };
 let currentSemesterCourses = [];
 
-async function initAttendanceTracker() {
+// Run initAttendanceTracker when the DOM is fully loaded
+document.addEventListener("DOMContentLoaded", () => {
+     if (window.location.pathname.includes('attendance.html')) {
+         initAttendanceTracker();
+     }
+});
+
+window.initAttendanceTracker = async function() {
     const semContainer = document.getElementById('y2s3-container');
     if (!semContainer) return;
 
@@ -609,33 +592,47 @@ async function initAttendanceTracker() {
     if (tabBtn) tabBtn.textContent = `${displaySem} Subjects`;
 
     try {
-        // Use the local database variable we set up earlier!
         if (typeof myDatabase !== 'undefined') {
             currentSemesterCourses = myDatabase.programmes[profile.programme].curriculum[profile.semester];
-            renderSemesterAttendance();
-            renderCustomAttendance();
+            
+            if(currentSemesterCourses) {
+                 renderSemesterAttendance();
+                 renderCustomAttendance();
+            } else {
+                 semContainer.innerHTML = "<p>No subjects found for this semester.</p>";
+            }
         }
     } catch (error) {
+        console.error(error);
         semContainer.innerHTML = "<p>Error loading subjects.</p>";
     }
 }
 
-function renderSemesterAttendance() {
+window.renderSemesterAttendance = function() {
     const container = document.getElementById('y2s3-container');
     container.innerHTML = '';
 
     currentSemesterCourses.forEach(course => {
-        // Initialize with the new "missed" format, default to 14 total classes
-        if (!attendanceData.semester[course.code] || attendanceData.semester[course.code].missed === undefined) {
-            attendanceData.semester[course.code] = { total: 14, missed: 0 };
+        // Automatically pull the exact hours from data.js
+        const defaultHours = course.weeklyHours || 3;
+
+        // Force a data structure update if the browser is stuck
+        if (!attendanceData.semester[course.code] || attendanceData.semester[course.code].hoursMissed === undefined) {
+            attendanceData.semester[course.code] = { 
+                weeklyHours: defaultHours, 
+                hoursMissed: 0 
+            };
         }
         
         const record = attendanceData.semester[course.code];
         container.appendChild(createAttendanceCard(course.code, course.name, record, 'semester'));
     });
+    
+    // Save the corrected structure immediately
+    saveAttendance();
 }
 
-function renderCustomAttendance() {
+window.renderCustomAttendance = function() {
     const container = document.getElementById('custom-container');
     container.innerHTML = `
         <div style="margin-bottom: 20px; text-align: right;">
@@ -649,41 +646,44 @@ function renderCustomAttendance() {
         container.innerHTML += `<p style="text-align: center; color: var(--text-muted);">No custom subjects added yet.</p>`;
     } else {
         attendanceData.custom.forEach((course, index) => {
-            // Ensure legacy custom subjects get the new format
-            if (course.missed === undefined) {
-                course.total = 14;
-                course.missed = 0;
+            if (course.weeklyHours === undefined) {
+                course.weeklyHours = 3;
+                course.totalWeeks = 14;
+                course.hoursMissed = course.missed || 0;
             }
             container.appendChild(createAttendanceCard(course.code, course.name, course, 'custom', index));
         });
     }
 }
 
-function createAttendanceCard(code, name, record, type, customIndex = null) {
+window.createAttendanceCard = function(code, name, record, type, customIndex = null) {
     const card = document.createElement('div');
     card.className = 'card-section';
     card.style.marginBottom = '20px';
 
-    // Reverse Math: Attended = Total - Missed
-    const attendedClasses = record.total - record.missed;
-    const percentage = record.total === 0 ? 100 : ((attendedClasses / record.total) * 100).toFixed(1);
+    // Core Math: Strictly uses your timetable data
+    const totalWeeksForMath = type === 'custom' ? (record.totalWeeks || 14) : 14;
+    const totalHoursForSemester = record.weeklyHours * totalWeeksForMath;
+    const attendedHours = totalHoursForSemester - record.hoursMissed;
+    const percentage = totalHoursForSemester === 0 ? 100 : ((attendedHours / totalHoursForSemester) * 100).toFixed(1);
+    
     const isDanger = percentage < 80;
     const statusColor = isDanger ? 'var(--danger)' : 'var(--success)';
 
     // Math for Safe Skips (20% rule)
-    const maxMissesAllowed = Math.floor(record.total * 0.2);
-    const safeSkipsLeft = maxMissesAllowed - record.missed;
+    const maxMissesAllowed = Math.floor(totalHoursForSemester * 0.2);
+    const safeHoursLeft = maxMissesAllowed - record.hoursMissed;
 
     let skipMessage = "";
-    if (safeSkipsLeft > 0) {
-        skipMessage = `You can safely skip <strong>${safeSkipsLeft}</strong> more class${safeSkipsLeft !== 1 ? 'es' : ''}.`;
-    } else if (safeSkipsLeft === 0) {
-        skipMessage = `<strong>0</strong> safe skips left. Do not miss any more classes!`;
-        skipMessage = `<span style="color: var(--text-main);">${skipMessage}</span>`;
+    if (safeHoursLeft > 0) {
+        skipMessage = `You can safely miss <strong>${safeHoursLeft}</strong> more hour${safeHoursLeft !== 1 ? 's' : ''} of class.`;
+    } else if (safeHoursLeft === 0) {
+        skipMessage = `<span style="color: var(--text-main);"><strong>0</strong> safe hours left. Do not miss any more!</span>`;
     } else {
-        skipMessage = `<span style="color: var(--danger);"><strong>WARNING:</strong> You have exceeded the 20% limit by ${Math.abs(safeSkipsLeft)} class${Math.abs(safeSkipsLeft) !== 1 ? 'es' : ''}!</span>`;
+        skipMessage = `<span style="color: var(--danger);"><strong>WARNING:</strong> You have exceeded the 20% limit by ${Math.abs(safeHoursLeft)} hour${Math.abs(safeHoursLeft) !== 1 ? 's' : ''}!</span>`;
     }
 
+    // Super clean UI: NO "Total Classes" buttons. ONLY "Hours Missed".
     card.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border); padding-bottom: 15px; margin-bottom: 15px;">
             <div>
@@ -695,23 +695,15 @@ function createAttendanceCard(code, name, record, type, customIndex = null) {
             </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: center; margin-bottom: 15px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
             <div>
-                <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;">Total Classes</div>
-                <div style="display: flex; align-items: center; justify-content: center; gap: 15px;">
-                    <button onclick="updateAttendance('${code}', '${type}', 'total', -1, ${customIndex})" style="width: 35px; height: 35px; border-radius: 50%; border: 1px solid var(--border); background: var(--input-bg); color: var(--text-main); cursor: pointer; font-size: 1.2rem; font-weight: bold;">-</button>
-                    <span style="font-size: 1.3rem; font-weight: bold; color: var(--text-muted); width: 30px;">${record.total}</span>
-                    <button onclick="updateAttendance('${code}', '${type}', 'total', 1, ${customIndex})" style="width: 35px; height: 35px; border-radius: 50%; border: none; background: var(--text-muted); color: white; cursor: pointer; font-size: 1.2rem; font-weight: bold;">+</button>
-                </div>
+                <div style="font-size: 0.95rem; color: var(--danger); font-weight: bold;">Hours Missed</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">(e.g. +2 for skipping a 2hr lecture)</div>
             </div>
-
-            <div>
-                <div style="font-size: 0.85rem; color: var(--danger); font-weight: bold; margin-bottom: 8px;">Classes Missed</div>
-                <div style="display: flex; align-items: center; justify-content: center; gap: 15px;">
-                    <button onclick="updateAttendance('${code}', '${type}', 'missed', -1, ${customIndex})" style="width: 35px; height: 35px; border-radius: 50%; border: 1px solid var(--danger); background: var(--input-bg); color: var(--danger); cursor: pointer; font-size: 1.2rem; font-weight: bold;">-</button>
-                    <span style="font-size: 1.5rem; font-weight: bold; color: var(--danger); width: 30px;">${record.missed}</span>
-                    <button onclick="updateAttendance('${code}', '${type}', 'missed', 1, ${customIndex})" style="width: 35px; height: 35px; border-radius: 50%; border: none; background: var(--danger); color: white; cursor: pointer; font-size: 1.2rem; font-weight: bold;">+</button>
-                </div>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <button onclick="updateAttendance('${code}', '${type}', 'hoursMissed', -1, ${customIndex})" style="width: 35px; height: 35px; border-radius: 50%; border: 1px solid var(--danger); background: var(--input-bg); color: var(--danger); cursor: pointer; font-size: 1.2rem; font-weight: bold;">-</button>
+                <span style="font-size: 1.5rem; font-weight: bold; color: var(--danger); width: 30px; text-align: center;">${record.hoursMissed}</span>
+                <button onclick="updateAttendance('${code}', '${type}', 'hoursMissed', 1, ${customIndex})" style="width: 35px; height: 35px; border-radius: 50%; border: none; background: var(--danger); color: white; cursor: pointer; font-size: 1.2rem; font-weight: bold;">+</button>
             </div>
         </div>
 
@@ -725,7 +717,7 @@ function createAttendanceCard(code, name, record, type, customIndex = null) {
     return card;
 }
 
-function updateAttendance(code, type, field, change, customIndex) {
+window.updateAttendance = function(code, type, field, change, customIndex) {
     let targetRecord;
     
     if (type === 'semester') {
@@ -737,9 +729,11 @@ function updateAttendance(code, type, field, change, customIndex) {
     targetRecord[field] += change;
 
     // Safety Checks
-    if (targetRecord.total < 1) targetRecord.total = 1; // Must have at least 1 class
-    if (targetRecord.missed < 0) targetRecord.missed = 0; // Can't miss less than 0 classes
-    if (targetRecord.missed > targetRecord.total) targetRecord.missed = targetRecord.total; // Can't miss more classes than exist
+    if (targetRecord.hoursMissed < 0) targetRecord.hoursMissed = 0;
+    
+    const totalWeeksForMath = type === 'custom' ? (targetRecord.totalWeeks || 14) : 14;
+    const maxHours = targetRecord.weeklyHours * totalWeeksForMath;
+    if (targetRecord.hoursMissed > maxHours) targetRecord.hoursMissed = maxHours;
 
     saveAttendance();
     
@@ -747,18 +741,40 @@ function updateAttendance(code, type, field, change, customIndex) {
     else renderCustomAttendance();
 }
 
-function addCustomSubject() {
+window.addCustomSubject = function() {
     const code = prompt("Enter Subject Code (e.g., EGU2):");
     if (!code) return;
     const name = prompt("Enter Subject Name (e.g., Bahasa Kebangsaan A):");
     if (!name) return;
 
-    attendanceData.custom.push({ code: code.toUpperCase(), name: name.toUpperCase(), total: 14, missed: 0 });
+    const lec = parseFloat(prompt("Enter LECTURE hours per week (Enter 0 if none):")) || 0;
+    const tut = parseFloat(prompt("Enter TUTORIAL hours per week (Enter 0 if none):")) || 0;
+    const prac = parseFloat(prompt("Enter PRACTICAL hours per week (Enter 0 if none):")) || 0;
+    const weeks = parseInt(prompt("Enter Total Weeks for this class (Usually 14):")) || 14;
+
+    const totalWeekly = lec + tut + prac;
+
+    if (totalWeekly <= 0) {
+        alert("Error: Total weekly hours cannot be 0. Subject not added.");
+        return;
+    }
+
+    attendanceData.custom.push({ 
+        code: code.toUpperCase(), 
+        name: name.toUpperCase(), 
+        lecture: lec,
+        tutorial: tut,
+        practical: prac,
+        weeklyHours: totalWeekly, 
+        totalWeeks: weeks, 
+        hoursMissed: 0 
+    });
+    
     saveAttendance();
     renderCustomAttendance();
 }
 
-function deleteCustomSubject(index) {
+window.deleteCustomSubject = function(index) {
     if (confirm("Remove this custom subject?")) {
         attendanceData.custom.splice(index, 1);
         saveAttendance();
@@ -766,18 +782,16 @@ function deleteCustomSubject(index) {
     }
 }
 
-function saveAttendance() {
+window.saveAttendance = function() {
     localStorage.setItem('attendanceRecord', JSON.stringify(attendanceData));
 }
 
-function resetAttendance() {
-    if(confirm("🚨 WARNING: This will reset ALL your missed classes back to 0. Are you sure?")) {
+window.resetAttendance = function() {
+    if(confirm("🚨 WARNING: This will reset ALL your missed hours back to 0. Are you sure?")) {
         for (let key in attendanceData.semester) {
-            attendanceData.semester[key].missed = 0;
-            // Optionally reset total back to 14, or leave it as whatever the user set it to
-            // attendanceData.semester[key].total = 14; 
+            attendanceData.semester[key].hoursMissed = 0;
         }
-        attendanceData.custom.forEach(course => course.missed = 0);
+        attendanceData.custom.forEach(course => course.hoursMissed = 0);
         
         saveAttendance();
         renderSemesterAttendance();
@@ -1068,133 +1082,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 /* ==============================================================
-   DASHBOARD INLINE PROFILE LOGIC (SPLIT YEAR & SEMESTER)
+   DISPLAY CURRENT PROFILE BADGE (GLOBAL)
 ============================================================== */
-let dashboardUniData = null;
-
-async function initDashboardProfile() {
-    const progSelector = document.getElementById('programme-selector');
-    const yearSelector = document.getElementById('year-selector');
-    const semSelector = document.getElementById('semester-selector');
-    
-    if (!progSelector || !yearSelector || !semSelector) return;
-
-    // Load data from your data.js variable (bypassing the fetch block!)
-    if (typeof myDatabase !== 'undefined') {
-        dashboardUniData = myDatabase;
-    } else {
-        console.error("Database not found! Make sure data.js is linked in HTML.");
-        return;
-    }
-        
-    // Check if user already has a saved profile
+document.addEventListener("DOMContentLoaded", () => {
     const savedProfileJSON = localStorage.getItem('studentProfile');
+    const header = document.querySelector('header');
     
-    if (savedProfileJSON) {
+    // Check if we are on a tool page (skip the main dashboard)
+    const isDashboard = window.location.pathname.includes('index.html') || window.location.pathname.endsWith('/');
+    
+    if (!isDashboard && header && savedProfileJSON && typeof myDatabase !== 'undefined') {
         const profile = JSON.parse(savedProfileJSON);
-        progSelector.value = profile.programme;
+        const progData = myDatabase.programmes[profile.programme];
         
-        // Update the Year dropdown options first
-        updateDashboardYears();
-        
-        // Break apart the saved "Y2S3" format
-        if (profile.semester) {
-            const savedYear = profile.semester.substring(1, 2);
-            const savedSem = profile.semester.substring(3, 4);
+        if (progData) {
+            const progTitle = progData.title;
+            // Format the text to look like "Year 2 Sem 3"
+            const semText = profile.semester ? ` • Year ${profile.semester.charAt(1)} Sem ${profile.semester.charAt(3)}` : '';
+
+            // Create the badge element
+            const badge = document.createElement('div');
+            badge.style.cssText = "display: inline-block; background: var(--bg-color); color: var(--primary); padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; margin-top: 15px; border: 1px solid var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: center;";
+            badge.textContent = progTitle + semText;
             
-            // Set the Year dropdown
-            if(yearSelector.querySelector(`option[value="${savedYear}"]`)) {
-                yearSelector.value = savedYear;
-            }
-            
-            // Update the Semester dropdown options based on the selected Year
-            updateDashboardSemestersOnly();
-            
-            // Set the Semester dropdown
-            if(semSelector.querySelector(`option[value="${savedSem}"]`)) {
-                semSelector.value = savedSem;
-            }
+            // Inject it right at the bottom of the header
+            header.appendChild(badge);
         }
-    } else {
-        // First time user: Just load defaults
-        updateDashboardYears();
-        saveDashboardProfile(); 
     }
-}
-
-// Dynamically populate available Years based on the database
-window.updateDashboardYears = function() {
-    if (!dashboardUniData) return;
-    
-    const progSelector = document.getElementById('programme-selector');
-    const yearSelector = document.getElementById('year-selector');
-    const programmeData = dashboardUniData.programmes[progSelector.value];
-    
-    yearSelector.innerHTML = '';
-    
-    if (programmeData && programmeData.curriculum) {
-        // Extract unique years from keys like "Y1S1", "Y2S3"
-        const keys = Object.keys(programmeData.curriculum);
-        const years = [...new Set(keys.map(k => k.substring(1, 2)))].sort();
-        
-        years.forEach(year => {
-            const option = document.createElement('option');
-            option.value = year;
-            option.textContent = `Year ${year}`;
-            yearSelector.appendChild(option);
-        });
-    }
-    
-    // Auto-update semesters for whatever year was just populated
-    updateDashboardSemestersOnly();
-}
-
-// Dynamically populate available Semesters based on the chosen Year
-window.updateDashboardSemestersOnly = function() {
-    if (!dashboardUniData) return;
-    
-    const progSelector = document.getElementById('programme-selector');
-    const yearSelector = document.getElementById('year-selector');
-    const semSelector = document.getElementById('semester-selector');
-    
-    const prog = progSelector.value;
-    const year = yearSelector.value;
-    
-    semSelector.innerHTML = '';
-    
-    const programmeData = dashboardUniData.programmes[prog];
-    if (programmeData && programmeData.curriculum) {
-        // Find semesters that only exist for this specific year
-        const keys = Object.keys(programmeData.curriculum);
-        const sems = keys
-            .filter(k => k.startsWith(`Y${year}`))
-            .map(k => k.substring(3, 4))
-            .sort();
-            
-        sems.forEach(sem => {
-            const option = document.createElement('option');
-            option.value = sem;
-            option.textContent = `Sem ${sem}`;
-            semSelector.appendChild(option);
-        });
-    }
-}
-
-// Auto-save to localStorage
-window.saveDashboardProfile = function() {
-    const progSelector = document.getElementById('programme-selector');
-    const yearSelector = document.getElementById('year-selector');
-    const semSelector = document.getElementById('semester-selector');
-    
-    if (!progSelector.value || !yearSelector.value || !semSelector.value) return;
-
-    // Combine them back into the exact "Y1S1" format your other apps require
-    const combinedSemester = `Y${yearSelector.value}S${semSelector.value}`;
-
-    const myProfile = {
-        programme: progSelector.value,
-        semester: combinedSemester
-    };
-    
-    localStorage.setItem('studentProfile', JSON.stringify(myProfile));
-}
+});
