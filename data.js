@@ -4,12 +4,12 @@ const myDatabase = {
       "title": "BACHELOR IN INFORMATION TECHNOLOGY (HONOURS) (INFORMATION SECURITY)",
       "curriculum": {
         "Y2S3": [
-          { "code": "MPU-34E2", "name": "GYM WORKOUT", "credits": 2, "weeklyHours": 2 },
-          { "code": "BMCS2003", "name": "ARTIFICIAL INTELLIGENCE", "credits": 3, "weeklyHours": 4 },
-          { "code": "BMIT3173", "name": "INTEGRATIVE PROGRAMMING", "credits": 3, "weeklyHours": 4 },
-          { "code": "BMIT2023", "name": "WEB AND MOBILE SYSTEMS", "credits": 3, "weeklyHours": 4 },
-          { "code": "BMIT2083", "name": "INFORMATION ASSURANCE AND SECURITY", "credits": 3, "weeklyHours": 3 },
-          { "code": "MPU-3133", "name": "FALSAFAH DAN ISU SEMASA", "credits": 3, "weeklyHours": 1 }
+          { "code": "MPU-34E2", "name": "GYM WORKOUT", "credits": 2, "weeklyHours": 2, "courseworkWeight": 100 },
+          { "code": "BMCS2003", "name": "ARTIFICIAL INTELLIGENCE", "credits": 3, "weeklyHours": 4, "courseworkWeight": 70 },
+          { "code": "BMIT3173", "name": "INTEGRATIVE PROGRAMMING", "credits": 3, "weeklyHours": 4, "courseworkWeight": 70 },
+          { "code": "BMIT2023", "name": "WEB AND MOBILE SYSTEMS", "credits": 3, "weeklyHours": 4, "courseworkWeight": 70 },
+          { "code": "BMIT2083", "name": "INFORMATION ASSURANCE AND SECURITY", "credits": 3, "weeklyHours": 3, "courseworkWeight": 50 },
+          { "code": "MPU-3133", "name": "FALSAFAH DAN ISU SEMASA", "credits": 3, "weeklyHours": 1, "courseworkWeight": 100 }
         ]
       }
     },

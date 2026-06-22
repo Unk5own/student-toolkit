@@ -826,209 +826,185 @@ window.switchTab = function(tabName) {
 
 
 /* ==============================================================
-   TARGET MARKS CALCULATOR LOGIC
+   ADVANCED TARGET MARKS CALCULATOR LOGIC (AUTO-RATIO & FULL GRADES)
 ============================================================== */
 
-function initMarksCalculator() {
-    const subjectSelect = document.getElementById('marks-subject');
-    if (!subjectSelect) return; // Exit if not on marks.html
+const targetMarksData = {
+    "BMCS2003": { final: 30, cw: [{id: "c1", name: "Test", w: 28}, {id: "c2", name: "Assignment", w: 42}] },
+    "BMIT2023": { final: 30, cw: [{id: "c1", name: "Test", w: 14}, {id: "c2", name: "Assignment", w: 56}] },
+    "BMIT2083": { final: 50, cw: [{id: "c1", name: "Assignment", w: 25}, {id: "c2", name: "Written Test", w: 20}, {id: "c3", name: "Quiz", w: 5}] },
+    "BMIT3173": { final: 30, cw: [{id: "c1", name: "Quiz", w: 7}, {id: "c2", name: "Assignment", w: 63}] }
+};
 
-    const profileJSON = localStorage.getItem('studentProfile');
-    if (!profileJSON) {
-        alert("Please set up your profile on the Home dashboard first!");
-        window.location.href = "index.html";
-        return;
-    }
+const gradingScale = [
+    { grade: 'A', min: 80, color: 'var(--text-main)' },
+    { grade: 'A-', min: 75, color: 'var(--text-main)' },
+    { grade: 'B+', min: 70, color: 'var(--text-main)' },
+    { grade: 'B', min: 65, color: 'var(--text-main)' },
+    { grade: 'B-', min: 60, color: 'var(--text-main)' },
+    { grade: 'C+', min: 55, color: 'var(--text-main)' },
+    { grade: 'C', min: 50, color: 'var(--text-main)' }
+];
 
-    const profile = JSON.parse(profileJSON);
-    
-    try {
-        // Use the global myDatabase variable from data.js instead of fetching
-        if (typeof myDatabase !== 'undefined') {
-            const currentCourses = myDatabase.programmes[profile.programme].curriculum[profile.semester];
-            
-            // Populate the dropdown with the user's specific subjects!
-            subjectSelect.innerHTML = '<option value="">-- Choose Subject --</option>';
-            if (currentCourses) {
-                currentCourses.forEach(course => {
-                    subjectSelect.innerHTML += `<option value="${course.code}">${course.code} - ${course.name}</option>`;
-                });
-            } else {
-                 subjectSelect.innerHTML = '<option value="">No subjects found for this semester</option>';
-            }
-            
-            renderInterface(); // Initialize the empty state
-        } else {
-            console.error("Database not found! Make sure data.js is linked in HTML.");
-            subjectSelect.innerHTML = '<option value="">Error loading database</option>';
-        }
-        
-    } catch(e) {
-        console.error("Error loading subjects for Marks Calculator:", e);
-        subjectSelect.innerHTML = '<option value="">Error loading subjects</option>';
-    }
-}
-
-// Dynamically build the input forms based on the selected mode
 window.renderInterface = function() {
-    const subject = document.getElementById('marks-subject').value;
+    const subjCode = document.getElementById('marks-subject').value;
     const mode = document.getElementById('calc-mode').value;
     const inputContainer = document.getElementById('dynamic-input-container');
     const resultSection = document.getElementById('marks-result-section');
-    
-    // Hide previous results when changing modes or subjects
-    if (resultSection) resultSection.style.display = 'none'; 
 
-    if (!subject) {
-        inputContainer.innerHTML = '<div style="padding: 30px; text-align: center; color: var(--text-muted); background: var(--input-bg); border-radius: 12px; border: 1px dashed var(--border);">Select a subject above to begin calculating.</div>';
+    if (!subjCode) {
+        inputContainer.innerHTML = '';
+        resultSection.style.display = 'none';
         return;
     }
+
+    const data = targetMarksData[subjCode];
+    let html = '';
 
     if (mode === 'mode-final') {
-        inputContainer.innerHTML = `
-            <div style="background: var(--input-bg); border: 1px solid var(--border); border-radius: 12px; padding: 25px; animation: fadeUp 0.3s ease-out;">
-                <h3 style="margin-top:0; color: var(--text-main); border-bottom: 1px solid var(--border); padding-bottom: 10px;">Final Exam Predictor</h3>
-                
-                <div class="input-group-col" style="margin-bottom: 15px;">
-                    <label style="font-weight: 600; color: var(--text-muted); margin-bottom: 5px;">Coursework Weightage (%)</label>
-                    <input type="number" id="cw-weight" class="styled-select" placeholder="e.g. 50">
-                </div>
-                
-                <div class="input-group-col" style="margin-bottom: 25px;">
-                    <label style="font-weight: 600; color: var(--text-muted); margin-bottom: 5px;">Current Coursework Mark Obtained (%)</label>
-                    <input type="number" id="cw-mark" class="styled-select" placeholder="e.g. 35 (out of your coursework weight)">
-                </div>
-                
-                <button onclick="calculateFinalTargets()" class="btn-primary" style="width: 100%; padding: 14px; border-radius: 8px; border: none; font-weight: bold; font-size: 1.05rem; cursor: pointer; background: var(--primary); color: white; transition: 0.2s;">
-                    Calculate Final Exam Targets
-                </button>
+        html += `<h4 style="margin: 0 0 15px 0; color: var(--primary);">Enter Known Coursework Scores</h4>`;
+        data.cw.forEach(comp => {
+            html += createRatioInput(comp.id, comp.name, comp.w);
+        });
+    } else if (mode === 'mode-reverse') {
+        html += `
+            <div style="margin-bottom: 20px;">
+                <label style="font-weight: bold; color: var(--primary); display: block; margin-bottom: 8px;">Find missing score for:</label>
+                <select id="find-target" class="styled-select" onchange="renderInterfaceReverseInputs()">
+                    ${data.cw.map(c => `<option value="${c.id}">${c.name} (Worth ${c.w}%)</option>`).join('')}
+                </select>
             </div>
-        `;
-    } else {
-        inputContainer.innerHTML = `
-            <div style="background: var(--input-bg); border: 1px solid var(--border); border-radius: 12px; padding: 25px; animation: fadeUp 0.3s ease-out;">
-                <h3 style="margin-top:0; color: var(--text-main); border-bottom: 1px solid var(--border); padding-bottom: 10px;">Reverse Component Calculator</h3>
-                
-                <div class="input-group-col" style="margin-bottom: 15px;">
-                    <label style="font-weight: 600; color: var(--text-muted); margin-bottom: 5px;">Missing Component Name</label>
-                    <input type="text" id="rev-name" class="styled-select" placeholder="e.g. Midterm Test">
-                </div>
-                
-                <div class="input-group-col" style="margin-bottom: 15px;">
-                    <label style="font-weight: 600; color: var(--text-muted); margin-bottom: 5px;">Weightage of Missing Component (%)</label>
-                    <input type="number" id="rev-weight" class="styled-select" placeholder="e.g. 20">
-                </div>
-                
-                <div class="input-group-col" style="margin-bottom: 15px;">
-                    <label style="font-weight: 600; color: var(--text-muted); margin-bottom: 5px;">Marks Obtained from OTHER Coursework (%)</label>
-                    <input type="number" id="rev-other" class="styled-select" placeholder="e.g. 25">
-                </div>
-                
-                <div class="input-group-col" style="margin-bottom: 25px;">
-                    <label style="font-weight: 600; color: var(--text-muted); margin-bottom: 5px;">Target Overall Coursework Mark (%)</label>
-                    <input type="number" id="rev-target" class="styled-select" placeholder="e.g. 40">
-                </div>
-                
-                <button onclick="calculateReverse()" class="btn-primary" style="width: 100%; padding: 14px; border-radius: 8px; border: none; font-weight: bold; font-size: 1.05rem; cursor: pointer; background: var(--primary); color: white; transition: 0.2s;">
-                    Calculate Missing Score
-                </button>
-            </div>
+            <div id="reverse-inputs"></div>
         `;
     }
+
+    inputContainer.innerHTML = html;
+    resultSection.style.display = 'block';
+
+    if (mode === 'mode-reverse') renderInterfaceReverseInputs();
+    else calculateDynamic();
 }
 
-// Logic for Mode 1: Final Exam Targets
-window.calculateFinalTargets = function() {
-    const weight = parseFloat(document.getElementById('cw-weight').value);
-    const currentMark = parseFloat(document.getElementById('cw-mark').value);
-    
-    if (isNaN(weight) || isNaN(currentMark)) {
-        alert("Please enter valid numbers for weightage and marks.");
-        return;
-    }
-    if (currentMark > weight) {
-        alert("Your marks cannot be higher than the coursework weightage!");
-        return;
-    }
-    
-    const finalWeight = 100 - weight;
-    
-    // Using the TAR UMT grade thresholds from your HTML table
-    const thresholds = [
-        { grade: 'A', min: 80 }, { grade: 'A-', min: 75 },
-        { grade: 'B+', min: 70 }, { grade: 'B', min: 65 },
-        { grade: 'B-', min: 60 }, { grade: 'C+', min: 55 },
-        { grade: 'C', min: 50 }
-    ];
+window.createRatioInput = function(id, name, weight) {
+    return `
+        <div style="margin-bottom: 15px; background: var(--bg-color); padding: 15px; border-radius: 8px; border: 1px solid var(--border);">
+            <label style="font-size: 0.95rem; font-weight: bold; color: var(--text-main); display: block; margin-bottom: 10px;">
+                ${name} <span style="color: var(--primary); font-size: 0.8rem; font-weight: normal; margin-left: 5px;">(Worth ${weight}% of total grade)</span>
+            </label>
+            <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center;">
+                <input type="number" id="score-${id}" placeholder="Your Score" oninput="calculateDynamic()" class="styled-select" style="text-align: center;">
+                <span style="color: var(--text-muted); font-weight: bold;">/</span>
+                <input type="number" id="outof-${id}" value="${weight}" placeholder="Max" oninput="calculateDynamic()" class="styled-select" style="text-align: center;">
+            </div>
+        </div>
+    `;
+}
 
-    let resultHTML = `
-        <h3 style="text-align:center; color: var(--text-main); margin-top:0; margin-bottom: 20px;">Score required on Final Exam (out of 100%)</h3>
-        <div style="display:flex; flex-direction:column; gap:8px;">
+window.renderInterfaceReverseInputs = function() {
+    const subjCode = document.getElementById('marks-subject').value;
+    const data = targetMarksData[subjCode];
+    const findTargetId = document.getElementById('find-target').value;
+    const container = document.getElementById('reverse-inputs');
+
+    let html = `<h4 style="margin: 0 0 15px 0; color: var(--primary);">Enter Known Scores</h4>`;
+    html += createRatioInput('final', 'Final Exam', data.final);
+
+    data.cw.forEach(comp => {
+        if (comp.id !== findTargetId) {
+            html += createRatioInput(comp.id, comp.name, comp.w);
+        }
+    });
+
+    container.innerHTML = html;
+    calculateDynamic();
+}
+
+window.calculateDynamic = function() {
+    const subjCode = document.getElementById('marks-subject').value;
+    const mode = document.getElementById('calc-mode').value;
+    const data = targetMarksData[subjCode];
+    const resultContainer = document.getElementById('dynamic-result-container');
+
+    let currentTotalWeightage = 0;
+    let isMissingInputs = false;
+    let targetComponentWeight = 0;
+    let targetComponentName = "";
+
+    // Gather Inputs based on mode
+    if (mode === 'mode-final') {
+        targetComponentWeight = data.final;
+        targetComponentName = "Final Exam";
+        
+        data.cw.forEach(comp => {
+            const score = parseFloat(document.getElementById(`score-${comp.id}`).value);
+            const outof = parseFloat(document.getElementById(`outof-${comp.id}`).value);
+            if (isNaN(score) || isNaN(outof) || outof === 0) isMissingInputs = true;
+            else currentTotalWeightage += (score / outof) * comp.w;
+        });
+    } else if (mode === 'mode-reverse') {
+        const findTargetId = document.getElementById('find-target').value;
+        const targetComp = data.cw.find(c => c.id === findTargetId);
+        targetComponentWeight = targetComp.w;
+        targetComponentName = targetComp.name;
+
+        const finalScore = parseFloat(document.getElementById(`score-final`).value);
+        const finalOutof = parseFloat(document.getElementById(`outof-final`).value);
+        if (isNaN(finalScore) || isNaN(finalOutof) || finalOutof === 0) isMissingInputs = true;
+        else currentTotalWeightage += (finalScore / finalOutof) * data.final;
+
+        data.cw.forEach(comp => {
+            if (comp.id !== findTargetId) {
+                const score = parseFloat(document.getElementById(`score-${comp.id}`).value);
+                const outof = parseFloat(document.getElementById(`outof-${comp.id}`).value);
+                if (isNaN(score) || isNaN(outof) || outof === 0) isMissingInputs = true;
+                else currentTotalWeightage += (score / outof) * comp.w;
+            }
+        });
+    }
+
+    if (isMissingInputs) {
+        resultContainer.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 20px; border: 1px dashed var(--border); border-radius: 8px;">Fill out all your known scores above to reveal your required targets.</div>`;
+        return;
+    }
+
+    // Render the Target Table
+    let tableHtml = `
+        <h4 style="margin: 0 0 10px 0; color: var(--text-main); text-align: center;">Required <span style="color: var(--primary);">${targetComponentName}</span> Score</h4>
+        <div style="background: var(--bg-color); border: 1px solid var(--border); border-radius: 8px; overflow: hidden;">
+            <div style="display: flex; justify-content: space-between; padding: 10px 15px; background: var(--input-bg); font-weight: bold; border-bottom: 1px solid var(--border);">
+                <span style="color: var(--text-muted);">Desired Grade</span>
+                <span style="color: var(--text-muted);">Required Score on Paper</span>
+            </div>
     `;
 
-    thresholds.forEach(t => {
-        const marksNeededOverall = t.min - currentMark;
-        // Calculate what they need on the paper (out of 100) to get those weighted marks
-        let finalScore100 = (marksNeededOverall / finalWeight) * 100;
+    gradingScale.forEach(grade => {
+        const marksNeededToHitGrade = grade.min - currentTotalWeightage;
+        const percentageNeededOnPaper = (marksNeededToHitGrade / targetComponentWeight) * 100;
         
-        let color = "var(--text-main)";
-        let text = `${finalScore100.toFixed(1)}%`;
+        let displayScore = "";
+        let rowColor = "var(--text-main)";
 
-        if (finalScore100 > 100) {
-            color = "var(--danger)";
-            text = "Impossible (>100%)";
-        } else if (finalScore100 <= 0) {
-            color = "var(--success)";
-            text = "Already Secured!";
-        } else if (finalScore100 < 50) {
-             // Highlight easy targets in green
-            color = "var(--success)";
+        if (percentageNeededOnPaper > 100) {
+            displayScore = "Impossible";
+            rowColor = "var(--danger)";
+        } else if (percentageNeededOnPaper <= 0) {
+            displayScore = "Secured!";
+            rowColor = "var(--success)";
+        } else {
+            displayScore = `${percentageNeededOnPaper.toFixed(1)}%`;
+            rowColor = "var(--primary)";
         }
 
-        resultHTML += `
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-radius: 8px; background: var(--bg-color); border: 1px solid var(--border);">
-                <strong style="color: ${color}; font-size: 1.1rem;">${t.grade} <span style="font-size: 0.85rem; color: var(--text-muted);">(${t.min}%)</span></strong>
-                <span style="font-weight: bold; font-size: 1.1rem; color: ${color};">${text}</span>
+        tableHtml += `
+            <div style="display: flex; justify-content: space-between; padding: 12px 15px; border-bottom: 1px solid var(--border);">
+                <span style="font-weight: bold; color: ${grade.color}; font-size: 1.1rem;">${grade.grade} <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: normal;">(> ${grade.min})</span></span>
+                <span style="font-weight: bold; color: ${rowColor}; font-size: 1.1rem;">${displayScore}</span>
             </div>
         `;
     });
-    
-    resultHTML += '</div>';
 
-    document.getElementById('dynamic-result-container').innerHTML = resultHTML;
-    document.getElementById('marks-result-section').style.display = 'block';
-    document.getElementById('marks-result-section').scrollIntoView({ behavior: 'smooth' });
-}
-
-// Logic for Mode 2: Reverse Calculation
-window.calculateReverse = function() {
-    const name = document.getElementById('rev-name').value || "Missing Component";
-    const weight = parseFloat(document.getElementById('rev-weight').value);
-    const otherMarks = parseFloat(document.getElementById('rev-other').value);
-    const target = parseFloat(document.getElementById('rev-target').value);
-
-    if (isNaN(weight) || isNaN(otherMarks) || isNaN(target)) {
-        alert("Please enter valid numbers for the calculation.");
-        return;
-    }
-
-    let neededWeighted = target - otherMarks;
-    if (neededWeighted < 0) neededWeighted = 0; // Already achieved target with other marks!
-    
-    // Scale it up to 100% for the specific paper
-    const neededScore100 = (neededWeighted / weight) * 100;
-
-    document.getElementById('dynamic-result-container').innerHTML = `
-        <h3 style="margin: 0 0 15px 0; font-size: 1.1rem; color: var(--text-main); text-align: center;">Reverse Calculation Result</h3>
-        <div style="background: var(--input-bg); border: 2px solid var(--primary); border-radius: 12px; padding: 25px; text-align: center;">
-            <p style="margin: 0 0 10px 0; color: var(--text-muted); font-size: 0.95rem;">To achieve an overall coursework mark of <strong>${target}%</strong>, your score for the <strong>${name}</strong> must have been:</p>
-            <h1 style="color: var(--primary); font-size: 3rem; margin: 0;">${neededScore100.toFixed(1)} <span style="font-size: 1.5rem; color: var(--text-muted);">/ 100</span></h1>
-            <p style="margin: 10px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">(This component carries ${weight}% weightage)</p>
-        </div>
-    `;
-    
-    document.getElementById('marks-result-section').style.display = 'block';
-    document.getElementById('marks-result-section').scrollIntoView({ behavior: 'smooth' });
+    tableHtml += `</div>`;
+    resultContainer.innerHTML = tableHtml;
 }
 
 
