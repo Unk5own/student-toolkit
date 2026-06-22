@@ -125,14 +125,12 @@
             <h1 style="margin-top: 0;">👋 Welcome to your Student Toolkit!</h1>
             <p class="subtitle">TARUMT Academic Dashboard • <span id="current-date"></span></p>
             
-            <!-- Notice the max-width is now 700px to fit the long text! -->
             <div style="display: flex; justify-content: center; margin-top: 25px; align-items: center; background: var(--input-bg); padding: 15px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 4px 6px rgba(0,0,0,0.02); max-width: 700px; margin-left: auto; margin-right: auto;">
                 <div class="input-group-col" style="flex: 1; text-align: left;">
                     <label style="font-size: 0.85rem; font-weight: 600; color: var(--primary); margin-bottom: 5px;">Active Programme</label>
                     <select id="programme-selector" class="styled-select" onchange="saveProfile()" style="padding: 10px; width: 100%;">
-                        <option value="">-- Choose Programme --</option>
-                        <option value="RIS">Bachelor in IT (Information Security)</option>
-                        <option value="RFI">Bachelor of Finance and Investment</option>
+                        <option value="RIS" selected>BACHELOR IN INFORMATION TECHNOLOGY (HONOURS) (INFORMATION SECURITY)</option>
+                        <option value="RFI">BACHELOR OF FINANCE AND INVESTMENT (HONOURS)</option>
                     </select>
                 </div>
             </div>

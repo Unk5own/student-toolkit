@@ -9,9 +9,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GPA / CGPA Calculator | Student Toolkit</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        .split-layout { display: grid; grid-template-columns: 1fr; gap: 30px; }
+        @media (min-width: 800px) { .split-layout { grid-template-columns: 1.2fr 1fr; } }
+        
+        select.styled-select {
+            padding: 8px; border-radius: 6px; font-family: inherit; font-size: 0.9rem;
+            background-color: var(--input-bg); color: var(--text-main); border: 1px solid var(--border);
+        }
+    </style>
 </head>
 <body data-theme="light">
-    <div class="dashboard" style="max-width: 800px; padding: 20px; margin: 0 auto; box-sizing: border-box;">
+    <div class="dashboard" style="max-width: 900px; padding: 20px; margin: 0 auto; box-sizing: border-box;">
         
         <div class="top-nav-bar">
             <a href="index.html" class="btn-back">
@@ -23,6 +32,7 @@
             
             <button id="theme-toggle" class="btn-dark-mode" onclick="toggleTheme()">🌙 Dark Mode</button>
         </div>
+        
         <header style="text-align: center; margin-bottom: 40px;">
             <h1 style="margin: 0; font-size: 2.2rem; color: var(--text-main);">GPA Calculator</h1>
             <span class="subtitle">Track your Semester and Cumulative GPA</span>
@@ -31,11 +41,41 @@
         <main class="content-area" style="display: block !important; background: transparent; border: none; box-shadow: none; padding: 0;">
             <div class="split-layout">
                 
-                <div class="card-section" style="margin: 0;">
+                <!-- LEFT COLUMN: Subjects -->
+                <div class="card-section" style="margin: 0; height: fit-content;">
+                    <h3 style="margin: 0 0 15px 0; color: var(--primary);">Current Subjects</h3>
+                    <!-- JavaScript will inject your subjects right here -->
                     <div id="course-list"></div>
+                </div>
 
-                    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px dashed var(--border);">
-                        <h3 style="margin: 0 0 15px 0; font-size: 1.1rem; color: var(--text-main);">TAR UMT Grading Scale</h3>
+                <!-- RIGHT COLUMN: Scores & Grading Scale -->
+                <div>
+                    <!-- Current Semester GPA -->
+                    <div class="card-section" style="margin: 0 0 25px 0; text-align: center;">
+                        <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: bold; text-transform: uppercase;">Current Semester GPA</span>
+                        <h1 id="gpa-score" style="color: var(--primary); font-size: 3.5rem; margin: 10px 0;">0.0000</h1>
+                    </div>
+
+                    <!-- Cumulative GPA -->
+                    <div class="card-section" style="margin: 0 0 25px 0;">
+                        <h3 style="margin: 0 0 20px 0; color: var(--primary);">Cumulative GPA (CGPA)</h3>
+                        <div class="input-group-col" style="margin-bottom: 15px;">
+                            <label style="font-weight: 600; color: var(--text-main); margin-bottom: 5px;">Previous CGPA</label>
+                            <input type="number" id="prev-cgpa" placeholder="e.g., 3.5000" step="0.01" class="styled-select" oninput="calculateCGPA()" style="width: 100%; box-sizing: border-box; padding: 10px;">
+                        </div>
+                        <div class="input-group-col" style="margin-bottom: 15px;">
+                            <label style="font-weight: 600; color: var(--text-main); margin-bottom: 5px;">Previous Total Credits</label>
+                            <input type="number" id="prev-credits" placeholder="e.g., 40" class="styled-select" oninput="calculateCGPA()" style="width: 100%; box-sizing: border-box; padding: 10px;">
+                        </div>
+                        <div style="margin-top: 25px; padding-top: 20px; border-top: 1px dashed var(--border); text-align: center;">
+                            <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: bold; text-transform: uppercase;">Overall CGPA</span>
+                            <h2 id="cgpa-score" style="color: var(--success); font-size: 2.5rem; margin: 10px 0;">0.0000</h2>
+                        </div>
+                    </div>
+
+                    <!-- Grading Scale Table (Moved Here!) -->
+                    <div class="card-section" style="margin: 0;">
+                        <h3 style="margin: 0 0 15px 0; font-size: 1.1rem; text-align: center; color: var(--text-main);">TAR UMT Grading Scale</h3>
                         <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
                             <thead>
                                 <tr style="border-bottom: 2px solid var(--border);">
@@ -45,46 +85,25 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr><td style="color: var(--text-muted);">A</td><td style="text-align: center; color: var(--text-muted);">80-100</td><td style="text-align: right; color: var(--text-muted);">4.00</td></tr>
-                                <tr><td style="color: var(--text-muted);">A-</td><td style="text-align: center; color: var(--text-muted);">75-79</td><td style="text-align: right; color: var(--text-muted);">3.67</td></tr>
-                                <tr><td style="color: var(--text-muted);">B+</td><td style="text-align: center; color: var(--text-muted);">70-74</td><td style="text-align: right; color: var(--text-muted);">3.33</td></tr>
-                                <tr><td style="color: var(--text-muted);">B</td><td style="text-align: center; color: var(--text-muted);">65-69</td><td style="text-align: right; color: var(--text-muted);">3.00</td></tr>
-                                <tr><td style="color: var(--text-muted);">B-</td><td style="text-align: center; color: var(--text-muted);">60-64</td><td style="text-align: right; color: var(--text-muted);">2.67</td></tr>
-                                <tr><td style="color: var(--text-muted);">C+</td><td style="text-align: center; color: var(--text-muted);">55-59</td><td style="text-align: right; color: var(--text-muted);">2.33</td></tr>
-                                <tr><td style="color: var(--text-muted);">C</td><td style="text-align: center; color: var(--text-muted);">50-54</td><td style="text-align: right; color: var(--text-muted);">2.00</td></tr>
-                                <tr><td style="color: var(--danger);">F</td><td style="text-align: center; color: var(--danger);">0-49</td><td style="text-align: right; color: var(--danger);">0.00</td></tr>
+                                <tr><td style="color: var(--text-muted); padding: 6px 5px;">A</td><td style="text-align: center; color: var(--text-muted);">80-100</td><td style="text-align: right; color: var(--text-muted);">4.00</td></tr>
+                                <tr><td style="color: var(--text-muted); padding: 6px 5px;">A-</td><td style="text-align: center; color: var(--text-muted);">75-79</td><td style="text-align: right; color: var(--text-muted);">3.67</td></tr>
+                                <tr><td style="color: var(--text-muted); padding: 6px 5px;">B+</td><td style="text-align: center; color: var(--text-muted);">70-74</td><td style="text-align: right; color: var(--text-muted);">3.33</td></tr>
+                                <tr><td style="color: var(--text-muted); padding: 6px 5px;">B</td><td style="text-align: center; color: var(--text-muted);">65-69</td><td style="text-align: right; color: var(--text-muted);">3.00</td></tr>
+                                <tr><td style="color: var(--text-muted); padding: 6px 5px;">B-</td><td style="text-align: center; color: var(--text-muted);">60-64</td><td style="text-align: right; color: var(--text-muted);">2.67</td></tr>
+                                <tr><td style="color: var(--text-muted); padding: 6px 5px;">C+</td><td style="text-align: center; color: var(--text-muted);">55-59</td><td style="text-align: right; color: var(--text-muted);">2.33</td></tr>
+                                <tr><td style="color: var(--text-muted); padding: 6px 5px;">C</td><td style="text-align: center; color: var(--text-muted);">50-54</td><td style="text-align: right; color: var(--text-muted);">2.00</td></tr>
+                                <tr><td style="color: var(--danger); padding: 6px 5px;">F</td><td style="text-align: center; color: var(--danger);">0-49</td><td style="text-align: right; color: var(--danger);">0.00</td></tr>
                             </tbody>
                         </table>
                     </div>
-                </div>
 
-                <div>
-                    <div class="card-section" style="margin: 0 0 25px 0; text-align: center;">
-                        <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: bold; text-transform: uppercase;">Current Semester GPA</span>
-                        <h1 id="gpa-score" style="color: var(--primary); font-size: 3.5rem; margin: 10px 0;">0.0000</h1>
-                    </div>
-
-                    <div class="card-section" style="margin: 0;">
-                        <h3 style="margin: 0 0 20px 0; color: var(--primary);">Cumulative GPA (CGPA)</h3>
-                        <div class="input-group-col" style="margin-bottom: 15px;">
-                            <label style="font-weight: 600; color: var(--text-main); margin-bottom: 5px;">Previous CGPA</label>
-                            <input type="number" id="prev-cgpa" placeholder="e.g., 3.5000" step="0.01" class="styled-select" oninput="calculateCGPA()">
-                        </div>
-                        <div class="input-group-col" style="margin-bottom: 15px;">
-                            <label style="font-weight: 600; color: var(--text-main); margin-bottom: 5px;">Previous Total Credits</label>
-                            <input type="number" id="prev-credits" placeholder="e.g., 40" class="styled-select" oninput="calculateCGPA()">
-                        </div>
-                        <div style="margin-top: 25px; padding-top: 20px; border-top: 1px dashed var(--border); text-align: center;">
-                            <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: bold; text-transform: uppercase;">Overall CGPA</span>
-                            <h2 id="cgpa-score" style="color: var(--success); font-size: 2.5rem; margin: 10px 0;">0.0000</h2>
-                        </div>
-                    </div>
                 </div>
             </div>
+            
             <div style="text-align: center; margin-top: 40px; padding-bottom: 20px;">
-            <button onclick="resetAll()" class="btn-delete" style="padding: 10px 20px; font-size: 1rem; border-radius: 8px;">
-                🚨 Reset All GPA Data
-            </button>
+                <button onclick="resetAll()" class="btn-delete" style="padding: 10px 20px; font-size: 1rem; border-radius: 8px; cursor: pointer;">
+                    🚨 Reset All GPA Data
+                </button>
             </div>
         </main>
     </div>

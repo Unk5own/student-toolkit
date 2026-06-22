@@ -17,13 +17,13 @@ const myDatabase = {
       "title": "BACHELOR OF FINANCE AND INVESTMENT (HONOURS)",
       "curriculum": {
         "Y3S1": [
-          { "code": "MPU-34q2", "name": "PICKLEBALL", "credits": 2, "weeklyHours": 2 },
-          { "code": "BBMF3033", "name": "FINANCIAL MARKETS & REGULATIONS", "credits": 3, "weeklyHours": 3.5 },
-          { "code": "BBMF3023", "name": "CORPORATE TREASURY MANAGEMENT", "credits": 3, "weeklyHours": 3.5 },
-          { "code": "BBMF3173", "name": "BOND ANALYSIS", "credits": 3, "weeklyHours": 3.5 },
-          { "code": "BBBD3023", "name": "CORPORATE GOVERNANCE & ETHICS", "credits": 3, "weeklyHours": 4 },
-          { "code": "BBMF3304", "name": "EQUITY ANALYSIS", "credits": 4, "weeklyHours": 4 },
-          { "code": "MPU-3202", "name": "SERVICE LEARNING", "credits": 2, "weeklyHours": 1 }
+          { "code": "MPU-34Q2", "name": "PICKLEBALL", "credits": 2, "weeklyHours": 2, "courseworkWeight": 100 },
+          { "code": "BBMF3033", "name": "FINANCIAL MARKETS & REGULATIONS", "credits": 3, "weeklyHours": 3.5, "courseworkWeight": 50 },
+          { "code": "BBMF3023", "name": "CORPORATE TREASURY MANAGEMENT", "credits": 3, "weeklyHours": 3.5, "courseworkWeight": 50 },
+          { "code": "BBMF3173", "name": "BOND ANALYSIS", "credits": 3, "weeklyHours": 3.5, "courseworkWeight": 50 },
+          { "code": "BBBD3023", "name": "CORPORATE GOVERNANCE & ETHICS", "credits": 3, "weeklyHours": 4, "courseworkWeight": 50 },
+          { "code": "BBMF3304", "name": "EQUITY ANALYSIS", "credits": 4, "weeklyHours": 4, "courseworkWeight": 50 },
+          { "code": "MPU-3202", "name": "SERVICE LEARNING", "credits": 2, "weeklyHours": 1, "courseworkWeight": 100 }
         ]
       }
     }

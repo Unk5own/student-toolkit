@@ -56,16 +56,17 @@
                 
                 <div class="card-section" style="margin: 0;">
                     <div style="display: flex; flex-direction: column; gap: 20px; margin-bottom: 25px;">
+                        
+                        <!-- Fixed: Only ONE Subject Dropdown -->
                         <div>
                             <label style="font-weight: bold; color: var(--primary); display: block; margin-bottom: 8px;">1. Select Subject</label>
                             <select id="marks-subject" class="styled-select" onchange="renderInterface()">
                                 <option value="">-- Choose Subject --</option>
-                                <option value="BMCS2003">BMCS2003  ARTIFICIAL INTELLIGENCE</option>
-                                <option value="BMIT2023">BMIT2023  WEB AND MOBILE SYSTEMS</option>
-                                <option value="BMIT2083">BMIT2083  INFORMATION ASSURANCE AND SECURITY</option>
-                                <option value="BMIT3173">BMIT3173  INTEGRATIVE PROGRAMMING</option>
+                                <!-- JS Injects subjects here -->
                             </select>
                         </div>
+                        
+                        <!-- Fixed: Restored the Calculator Mode Dropdown -->
                         <div>
                             <label style="font-weight: bold; color: var(--primary); display: block; margin-bottom: 8px;">2. Calculator Mode</label>
                             <select id="calc-mode" class="styled-select" onchange="renderInterface()" style="border-color: var(--primary);">
@@ -73,6 +74,7 @@
                                 <option value="mode-reverse">Find Missing Component Score</option>
                             </select>
                         </div>
+
                     </div>
                     <div id="dynamic-input-container"></div>
                 </div>

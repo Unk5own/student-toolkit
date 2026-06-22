@@ -373,16 +373,7 @@ let dashboardUniData = null;
 window.initDashboardProfile = async function() {
     if (typeof myDatabase !== 'undefined') {
         dashboardUniData = myDatabase;
-        const progSelector = document.getElementById('programme-selector');
-        if (progSelector) {
-            progSelector.innerHTML = '<option value="">-- Select Programme --</option>';
-            Object.keys(dashboardUniData.programmes).forEach(key => {
-                const option = document.createElement('option');
-                option.value = key;
-                option.textContent = dashboardUniData.programmes[key].title;
-                progSelector.appendChild(option);
-            });
-        }
+        
         loadProfile();
     }
 };
@@ -830,10 +821,22 @@ window.switchTab = function(tabName) {
 ============================================================== */
 
 const targetMarksData = {
+    // IT Subjects (RIS)
     "BMCS2003": { final: 30, cw: [{id: "c1", name: "Test", w: 28}, {id: "c2", name: "Assignment", w: 42}] },
     "BMIT2023": { final: 30, cw: [{id: "c1", name: "Test", w: 14}, {id: "c2", name: "Assignment", w: 56}] },
     "BMIT2083": { final: 50, cw: [{id: "c1", name: "Assignment", w: 25}, {id: "c2", name: "Written Test", w: 20}, {id: "c3", name: "Quiz", w: 5}] },
-    "BMIT3173": { final: 30, cw: [{id: "c1", name: "Quiz", w: 7}, {id: "c2", name: "Assignment", w: 63}] }
+    "BMIT3173": { final: 30, cw: [{id: "c1", name: "Quiz", w: 7}, {id: "c2", name: "Assignment", w: 63}] },
+    "MPU-3133": { final: 0,  cw: [{id: "c1", name: "Tugasan Bertulis", w: 30}, {id: "c2", name: "Pembentangan", w: 30}, {id: "c3", name: "Ujian", w: 40}] },
+    "MPU-34E2": { final: 0,  cw: [{id: "c1", name: "Continuous Assessment", w: 100}] },
+    
+    // Finance Subjects (RFI)
+    "BBMF3033": { final: 50, cw: [{id: "c1", name: "Assignment", w: 35}, {id: "c2", name: "Test", w: 15}] },
+    "BBMF3023": { final: 50, cw: [{id: "c1", name: "Assignment", w: 20}, {id: "c2", name: "Individual Test", w: 30}] },
+    "BBMF3173": { final: 50, cw: [{id: "c1", name: "Test", w: 20}, {id: "c2", name: "Assignment", w: 30}] },
+    "BBBD3023": { final: 50, cw: [{id: "c1", name: "Test", w: 25}, {id: "c2", name: "Group Assignment", w: 25}] },
+    "BBMF3304": { final: 50, cw: [{id: "c1", name: "Individual Test", w: 20}, {id: "c2", name: "Assignment", w: 30}] },
+    "MPU-3202": { final: 0,  cw: [{id: "c1", name: "Proposal Writing", w: 30}, {id: "c2", name: "Project Presentation", w: 40}, {id: "c3", name: "Reflective Essay", w: 30}] },
+    "MPU-34Q2": { final: 0,  cw: [{id: "c1", name: "Continuous Assessment", w: 100}] }
 };
 
 const gradingScale = [
@@ -846,9 +849,44 @@ const gradingScale = [
     { grade: 'C', min: 50, color: 'var(--text-main)' }
 ];
 
+document.addEventListener("DOMContentLoaded", () => {
+    if (window.location.pathname.includes('marks.html')) {
+        initMarksTracker();
+    }
+});
+
+window.initMarksTracker = async function() {
+    const profileJSON = localStorage.getItem('studentProfile');
+    if (!profileJSON || typeof myDatabase === 'undefined') return;
+
+    const profile = JSON.parse(profileJSON);
+    const courses = myDatabase.programmes[profile.programme].curriculum[profile.semester];
+    const subjectSelect = document.getElementById('marks-subject');
+    
+    if (subjectSelect && courses) {
+        subjectSelect.innerHTML = '<option value="">-- Choose Subject --</option>';
+        
+        // List of subject codes to hide from the Target Marks calculator
+        const hiddenSubjects = ["MPU-34E2", "MPU-34Q2"]; 
+
+        courses.forEach(course => {
+            // If the course is Gym or Pickleball, skip it!
+            if (hiddenSubjects.includes(course.code.toUpperCase())) {
+                return; 
+            }
+
+            const option = document.createElement('option');
+            option.value = course.code.toUpperCase();
+            option.textContent = `${course.code}  ${course.name}`;
+            subjectSelect.appendChild(option);
+        });
+    }
+}
+
 window.renderInterface = function() {
     const subjCode = document.getElementById('marks-subject').value;
-    const mode = document.getElementById('calc-mode').value;
+    let mode = document.getElementById('calc-mode').value;
+    const modeSelect = document.getElementById('calc-mode');
     const inputContainer = document.getElementById('dynamic-input-container');
     const resultSection = document.getElementById('marks-result-section');
 
@@ -859,19 +897,28 @@ window.renderInterface = function() {
     }
 
     const data = targetMarksData[subjCode];
+    
+    // Safety check for 100% Coursework Subjects
+    if (data.final === 0) {
+        modeSelect.value = 'mode-reverse'; 
+        modeSelect.options[0].disabled = true; // Disable "predict final exam"
+        mode = 'mode-reverse';
+    } else {
+        modeSelect.options[0].disabled = false;
+    }
+
     let html = '';
 
     if (mode === 'mode-final') {
         html += `<h4 style="margin: 0 0 15px 0; color: var(--primary);">Enter Known Coursework Scores</h4>`;
-        data.cw.forEach(comp => {
-            html += createRatioInput(comp.id, comp.name, comp.w);
-        });
+        data.cw.forEach(comp => { html += createRatioInput(comp.id, comp.name, comp.w); });
     } else if (mode === 'mode-reverse') {
         html += `
             <div style="margin-bottom: 20px;">
                 <label style="font-weight: bold; color: var(--primary); display: block; margin-bottom: 8px;">Find missing score for:</label>
                 <select id="find-target" class="styled-select" onchange="renderInterfaceReverseInputs()">
                     ${data.cw.map(c => `<option value="${c.id}">${c.name} (Worth ${c.w}%)</option>`).join('')}
+                    ${data.final > 0 ? `<option value="final">Final Exam (Worth ${data.final}%)</option>` : ''}
                 </select>
             </div>
             <div id="reverse-inputs"></div>
@@ -907,7 +954,10 @@ window.renderInterfaceReverseInputs = function() {
     const container = document.getElementById('reverse-inputs');
 
     let html = `<h4 style="margin: 0 0 15px 0; color: var(--primary);">Enter Known Scores</h4>`;
-    html += createRatioInput('final', 'Final Exam', data.final);
+    
+    if (findTargetId !== 'final' && data.final > 0) {
+        html += createRatioInput('final', 'Final Exam', data.final);
+    }
 
     data.cw.forEach(comp => {
         if (comp.id !== findTargetId) {
@@ -930,7 +980,6 @@ window.calculateDynamic = function() {
     let targetComponentWeight = 0;
     let targetComponentName = "";
 
-    // Gather Inputs based on mode
     if (mode === 'mode-final') {
         targetComponentWeight = data.final;
         targetComponentName = "Final Exam";
@@ -943,14 +992,22 @@ window.calculateDynamic = function() {
         });
     } else if (mode === 'mode-reverse') {
         const findTargetId = document.getElementById('find-target').value;
-        const targetComp = data.cw.find(c => c.id === findTargetId);
-        targetComponentWeight = targetComp.w;
-        targetComponentName = targetComp.name;
+        
+        if (findTargetId === 'final') {
+            targetComponentWeight = data.final;
+            targetComponentName = "Final Exam";
+        } else {
+            const targetComp = data.cw.find(c => c.id === findTargetId);
+            targetComponentWeight = targetComp.w;
+            targetComponentName = targetComp.name;
+        }
 
-        const finalScore = parseFloat(document.getElementById(`score-final`).value);
-        const finalOutof = parseFloat(document.getElementById(`outof-final`).value);
-        if (isNaN(finalScore) || isNaN(finalOutof) || finalOutof === 0) isMissingInputs = true;
-        else currentTotalWeightage += (finalScore / finalOutof) * data.final;
+        if (findTargetId !== 'final' && data.final > 0) {
+            const finalScore = parseFloat(document.getElementById(`score-final`).value);
+            const finalOutof = parseFloat(document.getElementById(`outof-final`).value);
+            if (isNaN(finalScore) || isNaN(finalOutof) || finalOutof === 0) isMissingInputs = true;
+            else currentTotalWeightage += (finalScore / finalOutof) * data.final;
+        }
 
         data.cw.forEach(comp => {
             if (comp.id !== findTargetId) {
@@ -967,7 +1024,6 @@ window.calculateDynamic = function() {
         return;
     }
 
-    // Render the Target Table
     let tableHtml = `
         <h4 style="margin: 0 0 10px 0; color: var(--text-main); text-align: center;">Required <span style="color: var(--primary);">${targetComponentName}</span> Score</h4>
         <div style="background: var(--bg-color); border: 1px solid var(--border); border-radius: 8px; overflow: hidden;">
