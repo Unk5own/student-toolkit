@@ -52,21 +52,9 @@ the Target Marks calculator (used for co-curricular subjects).
 dropdowns and the Target Marks rows. Change a boundary there and every screen
 follows.
 
-**`university.json`** holds the full 9-semester curriculum for both programmes
-with `code`, `name` and `credits`. It powers the **Past Semesters** panel on the
-GPA calculator: every semester earlier than your current one is listed with its
-real subjects, and grading them builds your CGPA properly instead of you having
-to remember a previous-CGPA figure.
-
-Tick *"Work these out from my past semesters"* and the Previous CGPA / Previous
-Total Credits boxes become read-only, derived values. Untick it to go back to
-typing them yourself — useful for transfer credits or anything the standard
-curriculum doesn't cover. Both figures are stored, so switching back and forth
-never loses what you typed.
-
-Semester keys sort lexicographically (`Y1S1` < `Y1S2` < … < `Y3S3`), which is
-how "earlier than current" is decided. The current semester is excluded (it is
-the main panel) and future ones are hidden.
+**`university.json`** holds the full 9-semester curriculum for both programmes,
+but only `code`, `name` and `credits`. Nothing loads it — it is kept as a
+reference for whoever writes the next semester into `data.js`.
 
 ## Where your data lives
 
@@ -92,27 +80,56 @@ a single JSON file.
 - Small shell files (HTML/CSS/JS) use **stale-while-revalidate** — served
   instantly from cache, refreshed in the background, so edits appear on the next
   load without bumping the cache version.
-- Large assets (`campus-map.svg`, the PDF, `panzoom.min.js`, icons) are
+- Large assets (`campus-map.js`, the PDF, `panzoom.min.js`, icons) are
   **cache-first** and only refresh when `CACHE_NAME` changes.
 
 Bump `CACHE_NAME` in `sw.js` when you change a large asset.
 
 ## The campus map
 
-`campus-map.svg` (~6.3 MB) is loaded at runtime rather than inlined, so the page
-paints immediately instead of blocking on it. It was optimised with SVGO using
-`svgo.config.js`, which deliberately disables `cleanupIds` — the search index
-looks buildings up by `id`, and ~235 fills reference `<pattern>`/`<filter>` defs
-by `url(#…)`.
+The map ships twice over: `campus-map.svg` is the editable source, and
+`campus-map.js` is what the app actually loads — the same SVG wrapped in a
+`window.CAMPUS_MAP_SVG` string.
 
-If you re-export the map from Figma, re-run:
+That indirection exists because the alternatives each break something. Inlining
+6 MB into `map.html` blocks the page from painting, and fetching the `.svg` at
+runtime fails outright when the pages are opened straight from disk, since
+`file://` blocks `fetch`. A `<script>` tag works from `file://`, over http, and
+offline, and is injected on demand so the shell still paints first.
+
+The SVG was optimised with SVGO using `svgo.config.js`, which deliberately
+disables `cleanupIds` — the search index looks buildings up by `id`, and ~235
+fills reference `<pattern>`/`<filter>` defs by `url(#…)`.
+
+If you re-export the map from Figma:
 
 ```bash
 npx svgo --config svgo.config.js -i campus-map.svg -o campus-map.svg
+node build-map.js build campus-map.svg
 ```
+
+`node build-map.js extract campus-map.svg` goes the other way, regenerating the
+`.svg` from the `.js` if the two ever drift.
 
 `panzoom` 9.4.0 is vendored locally as `panzoom.min.js` rather than loaded from
 a CDN, so the map still pans and zooms offline.
+
+## Look and feel
+
+The interface uses a "Liquid Glass" treatment in the spirit of iOS: translucent
+panels that blur and saturate whatever sits behind them, lit by a hairline
+specular rim along the top-left edge and floated on a soft, wide shadow.
+
+Glass only reads as glass if there is something behind it, so `body::before`
+paints a fixed field of four colour blooms for the panels to refract. It is
+fixed rather than scrolling, so the material shifts against the content as you
+move down the page.
+
+Everything is driven by tokens at the top of `style.css` — `--glass-bg`,
+`--glass-rim`, `--glass-blur`, the `--r-*` radii and the shared `--ease` curve —
+with a full dark variant. Browsers without `backdrop-filter` fall back to a
+near-opaque panel via `@supports`, and all motion is disabled under
+`prefers-reduced-motion`.
 
 ## Keyboard support
 

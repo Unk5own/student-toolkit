@@ -1,15 +1,21 @@
-const CACHE_NAME = 'tarumt-toolkit-v13';
+const CACHE_NAME = 'tarumt-toolkit-v15';
 
 // Big and effectively immutable: always served straight from cache, never
 // re-fetched on a normal visit. Re-downloading a 6 MB map on every page view
 // would be wasteful, so these only refresh when CACHE_NAME changes.
+//
+// Matched by filename, not full path: on GitHub Pages the app is served from
+// /student-toolkit/, so comparing against a leading-slash path never matched
+// and these were quietly falling through to stale-while-revalidate.
 const CACHE_FIRST = [
-  '/campus-map.svg',
-  '/TARUMT_KL_CAMPUS_MAP.pdf',
-  '/panzoom.min.js',
-  '/icon-192.png',
-  '/icon-512.png'
+  'campus-map.js',
+  'TARUMT_KL_CAMPUS_MAP.pdf',
+  'panzoom.min.js',
+  'icon-192.png',
+  'icon-512.png'
 ];
+
+const isCacheFirst = url => CACHE_FIRST.includes(url.pathname.split('/').pop());
 
 // The app shell. These are small and the app is broken without them, so a
 // failure here should fail the install and leave the previous version serving.
@@ -24,7 +30,6 @@ const CORE_ASSETS = [
   './style.css',
   './script.js',
   './data.js',
-  './university.json',
   './panzoom.min.js',
   './manifest.json',
   './icon-192.png',
@@ -34,7 +39,7 @@ const CORE_ASSETS = [
 // Large and non-essential. Cached best-effort: if one fails (slow campus wifi,
 // storage quota) the install still succeeds and it gets picked up at runtime.
 const OPTIONAL_ASSETS = [
-  './campus-map.svg',
+  './campus-map.js',
   './TARUMT_KL_CAMPUS_MAP.pdf'
 ];
 
@@ -85,7 +90,7 @@ self.addEventListener('fetch', event => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
-  if (CACHE_FIRST.includes(url.pathname)) {
+  if (isCacheFirst(url)) {
     event.respondWith(cacheFirst(request));
   } else {
     event.respondWith(staleWhileRevalidate(request));

@@ -13,8 +13,8 @@
         // Runs before first paint so dark mode never flashes white.
         document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'light');
     </script>
-    <!-- The map SVG is 6 MB. Warm the connection while the rest of the page paints. -->
-    <link rel="preload" href="campus-map.svg" as="fetch" type="image/svg+xml" crossorigin>
+    <!-- The map SVG is ~6 MB. Warm it while the rest of the page paints. -->
+    <link rel="prefetch" href="campus-map.js" as="script">
     <style>
         /* Map-specific styles that don't need to be in the global CSS */
         .map-wrapper {
@@ -22,14 +22,14 @@
             height: 600px;
             background: #ebf0e6;
 
-            border: none;
-            border-radius: 10px;
+            border: 1px solid var(--glass-border);
+            border-radius: var(--r-lg);
 
             overflow: hidden;
             position: relative;
             cursor: grab;
 
-            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            box-shadow: var(--shadow-lg);
 
             touch-action: none;
             overscroll-behavior: none;
@@ -54,7 +54,7 @@
             backface-visibility: hidden;
         }
 
-        /* Shown while the SVG downloads, and replaced by it on success. */
+        /* Shown while the SVG loads, and replaced by it on success. */
         .map-status {
             position: absolute;
             inset: 0;
@@ -68,13 +68,13 @@
             color: #4b5563;
             font-weight: 600;
         }
-        .map-status a { color: #1a73e8; }
+        .map-status a { color: #0a84ff; }
 
         .map-spinner {
             width: 34px;
             height: 34px;
             border: 3px solid rgba(0, 0, 0, 0.12);
-            border-top-color: #1a73e8;
+            border-top-color: #0a84ff;
             border-radius: 50%;
             animation: map-spin 0.8s linear infinite;
         }
@@ -154,7 +154,7 @@
                     </a>
                 </div>
 
-                <!-- campus-map.svg is injected here by initMap(). -->
+                <!-- campus-map.js is injected here by initMap(). -->
                 <div class="map-status" id="map-status" role="status" aria-live="polite">
                     <div class="map-spinner" aria-hidden="true"></div>
                     <span>Loading campus map…</span>
