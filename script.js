@@ -625,6 +625,34 @@ function setupMapInteraction(mapElement, mapContainer) {
 
         emergencyBtn.title = `Show ${points.length} emergency assembly points`;
     }
+
+    // 5. Legend index — every searchable place, listed A-Z. Built from the same
+    //    directory the search uses, so the two can never disagree.
+    const placesList = document.getElementById('legend-places');
+    if (placesList) {
+        const places = [...new Set(Object.values(campusDirectory))]
+            .map(id => ({ id, name: nameOf(id) }))
+            .sort((a, b) => a.name.localeCompare(b.name));
+
+        placesList.innerHTML = places.map(p => `
+            <button type="button" class="legend-place" data-place="${escapeHtml(p.id)}">
+                ${escapeHtml(p.name)}
+            </button>
+        `).join('');
+
+        placesList.querySelectorAll('[data-place]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                focusPlace(btn.dataset.place);
+                placesList.querySelectorAll('.legend-place').forEach(b => b.classList.remove('is-active'));
+                btn.classList.add('is-active');
+                // The map is above the legend, so bring it back into view.
+                mapContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+        });
+
+        const count = document.getElementById('legend-places-count');
+        if (count) count.textContent = `${places.length} places`;
+    }
 }
 
 

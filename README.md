@@ -15,7 +15,7 @@ campus map.
 | `attendance.html` | Hours-based attendance with dated absence history and the 80% safe-skip limit |
 | `marks.html` | Works out the score you need in each component to reach a target grade |
 | `calculator.html` | Semester GPA and projected CGPA |
-| `map.html` | Pan/zoom campus map with building search and emergency assembly points |
+| `map.html` | Pan/zoom campus map with building search, emergency assembly points and a full legend |
 
 ## Running it
 
@@ -116,6 +116,12 @@ node build-map.js build campus-map.svg
 
 `panzoom` 9.4.0 is vendored locally as `panzoom.min.js` rather than loaded from
 a CDN, so the map still pans and zooms offline.
+
+Below the map is a transcription of the printed legend — faculty and department
+abbreviations, security and clinic numbers, defibrillator locations, which
+departments sit in which block, and the campus address. The "All places" index
+is generated from the same `campusDirectory` the search uses, so the two cannot
+drift apart; tapping an entry locates it on the map.
 
 ## Look and feel
 

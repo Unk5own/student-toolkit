@@ -1173,6 +1173,207 @@ body::before {
 .map-control-btn:active::before { transform: scale(0.94); }
 
 /* ==============================================================
+   16b. MAP LEGEND
+============================================================== */
+.legend { margin-top: 36px; }
+
+.legend h2 {
+    margin: 0 0 18px 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--text-main);
+}
+
+.legend-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+}
+@media (min-width: 700px) {
+    .legend-grid { grid-template-columns: 1fr 1fr; }
+}
+
+.legend-card {
+    position: relative;
+    padding: 18px 22px;
+    border-radius: var(--r-md);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    box-shadow: var(--shadow-md);
+}
+
+.legend > .legend-card { margin-bottom: 14px; }
+
+.legend-card--urgent { border-color: rgba(255, 45, 85, 0.35); }
+
+.legend-card summary {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    cursor: pointer;
+    list-style: none;
+}
+.legend-card summary::-webkit-details-marker { display: none; }
+
+/* Chevron that rotates when the section opens. */
+.legend-card summary::after {
+    content: '›';
+    margin-left: auto;
+    font-size: 1.4rem;
+    line-height: 1;
+    color: var(--text-muted);
+    opacity: 0.6;
+    transform: rotate(90deg);
+    transition: transform 0.35s var(--ease);
+}
+.legend-card[open] summary::after { transform: rotate(-90deg); }
+
+.legend-card summary:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 4px;
+    border-radius: var(--r-sm);
+}
+
+.legend-title {
+    font-size: 1.02rem;
+    font-weight: 650;
+    letter-spacing: -0.2px;
+    color: var(--text-main);
+}
+
+.legend-count {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.legend-hint {
+    margin: 12px 0 0 0;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+}
+
+/* Abbreviation glossaries */
+.legend-list {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 8px 14px;
+    margin: 16px 0 0 0;
+    font-size: 0.88rem;
+}
+.legend-list--wide { grid-template-columns: 1fr; gap: 4px; }
+.legend-list--wide dt { margin-top: 10px; }
+.legend-list--wide dt:first-child { margin-top: 0; }
+
+.legend-list dt {
+    font-weight: 700;
+    color: var(--primary);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.legend-list dd {
+    margin: 0;
+    color: var(--text-muted);
+    line-height: 1.45;
+}
+
+.legend-bullets {
+    margin: 16px 0 0 0;
+    padding-left: 20px;
+    font-size: 0.88rem;
+    line-height: 1.7;
+    color: var(--text-muted);
+}
+
+.legend-contacts {
+    list-style: none;
+    margin: 16px 0 0 0;
+    padding: 0;
+}
+
+.legend-contacts li {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 10px 0;
+    border-top: 1px solid var(--hairline);
+}
+.legend-contacts li:first-child { border-top: none; padding-top: 0; }
+
+.legend-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.legend-contacts a {
+    font-size: 1.02rem;
+    font-weight: 650;
+    color: var(--primary);
+    text-decoration: none;
+}
+.legend-contacts a:hover { text-decoration: underline; }
+
+.legend-note {
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: var(--text-muted);
+}
+
+.legend-address {
+    margin: 16px 0 0 0;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--text-muted);
+}
+
+/* Clickable A-Z index of every place on the map */
+.legend-places {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.legend-place {
+    padding: 7px 14px;
+    border-radius: var(--r-pill);
+    border: 1px solid var(--glass-border);
+    background: var(--bg-color);
+    color: var(--text-main);
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 550;
+    cursor: pointer;
+    transition: background 0.25s var(--ease), color 0.25s var(--ease),
+                transform 0.25s var(--ease);
+}
+
+.legend-place:hover {
+    background: var(--tint);
+    color: var(--primary);
+    transform: translateY(-1px);
+}
+
+.legend-place.is-active {
+    background: var(--primary);
+    border-color: transparent;
+    color: #fff;
+}
+
+.legend-place:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* ==============================================================
    17. PROFILE / SETUP PAGE
 ============================================================== */
 .profile-body {

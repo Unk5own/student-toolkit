@@ -160,6 +160,125 @@
                     <span>Loading campus map…</span>
                 </div>
             </div>
+
+            <!-- Everything printed on the paper map's legend, transcribed so it
+                 is readable and searchable without zooming into the artwork. -->
+            <section class="legend" aria-labelledby="legend-heading">
+                <h2 id="legend-heading">Map Legend</h2>
+
+                <details class="legend-card" open>
+                    <summary>
+                        <span class="legend-title">All places</span>
+                        <span class="legend-count" id="legend-places-count"></span>
+                    </summary>
+                    <p class="legend-hint">Tap any place to find it on the map.</p>
+                    <div class="legend-places" id="legend-places"></div>
+                </details>
+
+                <div class="legend-grid">
+
+                    <details class="legend-card">
+                        <summary><span class="legend-title">Faculties &amp; centres</span></summary>
+                        <dl class="legend-list">
+                            <dt>FOAS</dt><dd>Faculty of Applied Sciences</dd>
+                            <dt>FOCS</dt><dd>Faculty of Computing &amp; Information Technology</dd>
+                            <dt>FAFB</dt><dd>Faculty of Accounting, Finance and Business</dd>
+                            <dt>FOET</dt><dd>Faculty of Engineering and Technology</dd>
+                            <dt>FOBE</dt><dd>Faculty of Built Environment</dd>
+                            <dt>FSSH</dt><dd>Faculty of Social Science and Humanities</dd>
+                            <dt>FCCI</dt><dd>Faculty of Communication and Creative Industries</dd>
+                            <dt>CPUS</dt><dd>Centre for Pre-University Studies</dd>
+                            <dt>CPSR</dt><dd>Centre for Postgraduate Studies and Research</dd>
+                            <dt>CPE</dt><dd>Centre for Continuing &amp; Professional Education</dd>
+                            <dt>CBIEV</dt><dd>Centre for Business Incubation &amp; Entrepreneurial Ventures</dd>
+                        </dl>
+                    </details>
+
+                    <details class="legend-card">
+                        <summary><span class="legend-title">Departments</span></summary>
+                        <dl class="legend-list">
+                            <dt>DSA</dt><dd>Department of Student Affairs</dd>
+                            <dt>DOS</dt><dd>Department of Security</dd>
+                            <dt>DISO</dt><dd>Department of International Student Office</dd>
+                            <dt>CITC</dt><dd>Communication &amp; Information Technology Centre</dd>
+                            <dt>DACE</dt><dd>Department of Admissions &amp; Credit Evaluation</dd>
+                            <dt>DECA</dt><dd>Department of Examinations and Credit Accumulation</dd>
+                            <dt>DFM</dt><dd>Department of Facilities Management</dd>
+                            <dt>DAR</dt><dd>Department of Alumni Relations</dd>
+                            <dt>DFIN</dt><dd>Department of Finance</dd>
+                        </dl>
+                    </details>
+
+                    <details class="legend-card legend-card--urgent">
+                        <summary><span class="legend-title">Emergency &amp; health</span></summary>
+                        <ul class="legend-contacts">
+                            <li>
+                                <span class="legend-label">TARUMT Security Helpline</span>
+                                <a href="tel:+60341450250">+603 - 4145 0250</a>
+                            </li>
+                            <li>
+                                <span class="legend-label">First Aid Unit (FAU)</span>
+                                <a href="tel:+60341450123">+603 - 4145 0123</a> <span class="legend-note">ext 7784</span>
+                            </li>
+                            <li>
+                                <span class="legend-label">Klinik Low</span>
+                                <a href="tel:+601111186918">+6011 - 1118 6918</a>
+                                <span class="legend-note">
+                                    Mon–Fri 9:00am – 6:00pm · Sat 9:00am – 1:00pm ·
+                                    Sun 9:00am – 12:00pm · closed on public holidays
+                                </span>
+                            </li>
+                        </ul>
+                        <p class="legend-hint">
+                            Use the ⚠ button on the map to light up all 18 emergency assembly points.
+                        </p>
+                    </details>
+
+                    <details class="legend-card">
+                        <summary><span class="legend-title">Defibrillators (AED)</span></summary>
+                        <ul class="legend-bullets">
+                            <li>DSA</li>
+                            <li>Main Gate Guard House</li>
+                            <li>Arena Level 6</li>
+                            <li>Club House Counter</li>
+                            <li>East Campus Guard House</li>
+                            <li>East Campus Block SA</li>
+                        </ul>
+                    </details>
+
+                    <details class="legend-card">
+                        <summary><span class="legend-title">What's in which block</span></summary>
+                        <dl class="legend-list legend-list--wide">
+                            <dt>Block A</dt>
+                            <dd>DSA (Ground) · DAR (Ground) · DECA (1st) · FOAS (2nd) · FOCS (2nd)</dd>
+                            <dt>Bangunan Tun Tan Siew Sin</dt>
+                            <dd>DACE (Ground) · DISO (Ground &amp; 1st) · DFIN (2nd)</dd>
+                            <dt>TARUMT Arena</dt>
+                            <dd>DOS (1st) · CPE (1st) · CBIEV (1st) · FAU (Ground) · Klinik Low (Ground)</dd>
+                        </dl>
+                    </details>
+
+                    <details class="legend-card">
+                        <summary><span class="legend-title">Getting here</span></summary>
+                        <p class="legend-address">
+                            Jalan Genting Kelang, Setapak,<br>
+                            53300 Kuala Lumpur,<br>
+                            Wilayah Persekutuan Kuala Lumpur
+                        </p>
+                        <ul class="legend-contacts">
+                            <li>
+                                <span class="legend-label">Main line</span>
+                                <a href="tel:+60341450100">+60 3 - 4145 0100/23</a>
+                            </li>
+                            <li>
+                                <span class="legend-label">Nearest LRT</span>
+                                <span class="legend-note">Taman Melati Station, Kelana Jaya Line</span>
+                            </li>
+                        </ul>
+                    </details>
+
+                </div>
+            </section>
         </main>
     </div>
 
