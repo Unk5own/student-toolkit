@@ -11,22 +11,25 @@
 ============================================================== */
 :root {
     /* Semantic colours (referenced by inline styles across the pages) */
-    --bg-color: rgba(255, 255, 255, 0.45);
-    --text-main: #1c1c1e;
-    --text-muted: #6b6b70;
+    --bg-color: rgba(255, 255, 255, 0.35);
+    --text-main: #17171c;
+    --text-muted: #5f6070;
     --primary: #0a84ff;
-    --border: rgba(255, 255, 255, 0.55);
-    --input-bg: rgba(255, 255, 255, 0.62);
-    --danger: #ff375f;
-    --success: #34c759;
+    --border: rgba(255, 255, 255, 0.65);
+    --input-bg: rgba(255, 255, 255, 0.55);
+    --danger: #ff2d55;
+    --success: #1eb85a;
 
-    /* Glass material */
-    --glass-bg: rgba(255, 255, 255, 0.58);
-    --glass-bg-strong: rgba(255, 255, 255, 0.74);
-    --glass-border: rgba(255, 255, 255, 0.6);
-    --glass-rim: rgba(255, 255, 255, 0.95);
-    --glass-blur: 30px;
-    --glass-saturate: 180%;
+    /* Glass material. Light mode runs thinner and blurrier than you might
+       expect: the colour field behind it is vivid, and the panels need to let
+       enough of it through to actually read as glass rather than as white
+       cards with a shadow. */
+    --glass-bg: rgba(255, 255, 255, 0.42);
+    --glass-bg-strong: rgba(255, 255, 255, 0.62);
+    --glass-border: rgba(255, 255, 255, 0.7);
+    --glass-rim: rgba(255, 255, 255, 1);
+    --glass-blur: 36px;
+    --glass-saturate: 200%;
 
     --shadow-sm: 0 2px 10px rgba(20, 30, 60, 0.06);
     --shadow-md: 0 8px 28px rgba(20, 30, 60, 0.10);
@@ -79,7 +82,7 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI",
                  Roboto, Helvetica, Arial, sans-serif;
     color: var(--text-main);
-    background-color: #eef1f7;
+    background-color: #dfe6f5;
     margin: 0;
     padding: 0;
     min-height: 100vh;
@@ -97,21 +100,22 @@ body::before {
     z-index: -1;
     pointer-events: none;
     background:
-        radial-gradient(38vmax 38vmax at 12% 8%,  rgba(10, 132, 255, 0.30), transparent 60%),
-        radial-gradient(34vmax 34vmax at 88% 12%, rgba(191, 90, 242, 0.24), transparent 62%),
-        radial-gradient(40vmax 40vmax at 78% 88%, rgba(48, 209, 88, 0.20),  transparent 60%),
-        radial-gradient(32vmax 32vmax at 18% 92%, rgba(255, 159, 10, 0.20), transparent 60%);
-    filter: saturate(115%);
+        radial-gradient(42vmax 42vmax at 10% 5%,   rgba(10, 132, 255, 0.72), transparent 62%),
+        radial-gradient(38vmax 38vmax at 92% 10%,  rgba(175, 82, 222, 0.62), transparent 64%),
+        radial-gradient(44vmax 44vmax at 80% 86%,  rgba(52, 199, 89, 0.52),  transparent 62%),
+        radial-gradient(36vmax 36vmax at 14% 94%,  rgba(255, 149, 0, 0.55),  transparent 62%),
+        radial-gradient(30vmax 30vmax at 52% 48%,  rgba(255, 45, 85, 0.30),  transparent 65%);
+    filter: saturate(125%);
     transition: opacity 0.4s var(--ease);
 }
 
-[data-theme="dark"] body::before,
 :root[data-theme="dark"] body::before {
     background:
-        radial-gradient(38vmax 38vmax at 12% 8%,  rgba(10, 132, 255, 0.30), transparent 60%),
-        radial-gradient(34vmax 34vmax at 88% 12%, rgba(191, 90, 242, 0.26), transparent 62%),
-        radial-gradient(40vmax 40vmax at 78% 88%, rgba(48, 209, 88, 0.16),  transparent 60%),
-        radial-gradient(32vmax 32vmax at 18% 92%, rgba(255, 159, 10, 0.14), transparent 60%);
+        radial-gradient(42vmax 42vmax at 10% 5%,  rgba(10, 132, 255, 0.34), transparent 62%),
+        radial-gradient(38vmax 38vmax at 92% 10%, rgba(175, 82, 222, 0.30), transparent 64%),
+        radial-gradient(44vmax 44vmax at 80% 86%, rgba(48, 209, 88, 0.20),  transparent 62%),
+        radial-gradient(36vmax 36vmax at 14% 94%, rgba(255, 149, 0, 0.18),  transparent 62%);
+    filter: saturate(115%);
 }
 
 :root[data-theme="dark"] body { background-color: #08080a; }
@@ -120,10 +124,7 @@ body::before {
    3. THE GLASS MATERIAL
 ============================================================== */
 .card-section,
-.menu-card,
-.welcome-banner,
 .summary-tile,
-.programme-picker,
 .backup-panel,
 .tt-day,
 .map-results,
@@ -141,10 +142,7 @@ body::before {
 /* Specular rim: a hairline of light along the top-left, masked to the border
    box so it reads as an edge catching the light rather than a gradient fill. */
 .card-section::before,
-.menu-card::before,
-.welcome-banner::before,
 .summary-tile::before,
-.programme-picker::before,
 .backup-panel::before,
 .tt-day::before,
 .profile-card::before {
@@ -164,8 +162,8 @@ body::before {
 /* Without backdrop-filter the panels would be washed-out translucent boxes,
    so fall back to something closer to solid. */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    .card-section, .menu-card, .welcome-banner, .summary-tile, .programme-picker,
-    .backup-panel, .tt-day, .map-results, .profile-card, .btn-back, .btn-dark-mode {
+    .card-section, .summary-tile, .backup-panel, .tt-day, .map-results,
+    .profile-card, .btn-back, .btn-dark-mode, .app-tile, .segmented, .tab-bar {
         background: var(--glass-bg-strong);
     }
 }
@@ -287,113 +285,197 @@ body::before {
 /* ==============================================================
    6. HOME PAGE
 ============================================================== */
-.welcome-banner {
-    border-radius: var(--r-lg);
-    padding: 44px 24px;
-    text-align: center;
-    margin-bottom: 28px;
-}
+.top-nav-bar--home { margin-bottom: 20px; }
 
-.welcome-banner h1 {
-    margin: 0 0 10px 0;
-    font-size: 2.3rem;
+.wordmark {
+    font-size: 1rem;
     font-weight: 700;
+    letter-spacing: -0.2px;
     color: var(--text-main);
-    letter-spacing: -0.9px;
+    opacity: 0.75;
 }
 
-.welcome-banner p,
-.welcome-banner .subtitle {
+/* Type-led hero: the date and greeting carry it, so no heavy banner box. */
+.hero {
+    text-align: left;
+    padding: 8px 4px 30px 4px;
+}
+
+.hero-eyebrow {
+    margin: 0 0 6px 0;
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 1.1px;
+    text-transform: uppercase;
+    color: var(--primary);
+}
+
+.hero h1 {
     margin: 0;
-    font-size: 1.05rem;
-    color: var(--text-muted);
-    font-weight: 500;
+    font-size: clamp(2rem, 7vw, 2.9rem);
+    font-weight: 700;
+    letter-spacing: -1.2px;
+    line-height: 1.05;
+    color: var(--text-main);
 }
 
-/* The "Active Programme" card inside the welcome banner. */
-.programme-picker {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    max-width: 700px;
-    margin: 26px auto 0 auto;
-    padding: 16px;
-    border-radius: var(--r-md);
+.hero-programme {
+    margin: 8px 0 0 0;
+    font-size: 1.02rem;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+/* Segmented control for switching programme */
+.segmented {
+    display: inline-flex;
+    gap: 4px;
+    margin-top: 20px;
+    padding: 4px;
+    border-radius: var(--r-pill);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
     box-shadow: var(--shadow-sm);
 }
 
-.programme-picker .input-group-col {
-    flex: 1;
-    text-align: left;
+.segment {
+    padding: 9px 18px;
+    border: 1px solid transparent;
+    border-radius: var(--r-pill);
+    background: transparent;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.35s var(--ease), background 0.35s var(--ease),
+                box-shadow 0.35s var(--ease), transform 0.35s var(--ease);
 }
 
-.programme-picker label {
-    font-size: 0.78rem;
-    font-weight: 700;
-    letter-spacing: 0.3px;
-    text-transform: uppercase;
-    color: var(--primary);
-    margin-bottom: 6px;
+.segment:hover { color: var(--text-main); }
+
+.segment.is-active {
+    color: var(--text-main);
+    background: var(--glass-bg-strong);
+    border-color: var(--glass-border);
+    box-shadow: var(--shadow-sm);
 }
 
-.menu-grid {
+.segment:active { transform: scale(0.97); }
+
+.segment:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* ==============================================================
+   6b. APP TILES
+============================================================== */
+.app-grid {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 20px;
+    gap: 14px;
+    margin-bottom: 28px;
 }
-@media (min-width: 800px) {
-    .menu-grid { grid-template-columns: repeat(3, 1fr); }
+@media (min-width: 640px) {
+    .app-grid { grid-template-columns: 1fr 1fr; }
+    .app-tile--wide { grid-column: 1 / -1; }
 }
 
-.menu-card {
-    border-radius: var(--r-lg);
-    padding: 40px 26px;
-    text-align: center;
+.app-tile {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 18px 20px;
+    border-radius: var(--r-md);
     text-decoration: none;
-    transition: transform 0.45s var(--ease), box-shadow 0.45s var(--ease),
-                background 0.45s var(--ease);
-}
-
-.menu-card:hover {
-    transform: translateY(-6px) scale(1.015);
-    box-shadow: var(--shadow-lg);
-    background: var(--glass-bg-strong);
-}
-
-.menu-card:active { transform: translateY(-2px) scale(0.995); }
-
-.icon-wrapper {
-    width: 84px;
-    height: 84px;
-    margin: 0 auto 22px auto;
-    background: var(--tint);
+    background: var(--glass-bg);
     border: 1px solid var(--glass-border);
-    border-radius: 50%;
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    box-shadow: var(--shadow-md);
+    transition: transform 0.4s var(--ease), box-shadow 0.4s var(--ease),
+                background 0.4s var(--ease);
+}
+
+.app-tile::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(145deg, var(--glass-rim), rgba(255, 255, 255, 0.06) 38%, transparent 62%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    pointer-events: none;
+}
+
+.app-tile:hover {
+    transform: translateY(-3px);
+    background: var(--glass-bg-strong);
+    box-shadow: var(--shadow-lg);
+}
+
+.app-tile:active { transform: translateY(-1px) scale(0.99); }
+
+/* Rounded-square icon plate, the way an app icon reads on a home screen. */
+.app-icon {
+    flex: 0 0 auto;
+    width: 52px;
+    height: 52px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2.6rem;
-    transition: transform 0.45s var(--ease), background 0.45s var(--ease);
+    font-size: 1.7rem;
+    border-radius: 16px;
+    background: var(--tint);
+    border: 1px solid var(--glass-border);
+    transition: transform 0.4s var(--ease), background 0.4s var(--ease);
 }
 
-.menu-card:hover .icon-wrapper {
-    transform: scale(1.08) rotate(-3deg);
-    background: rgba(10, 132, 255, 0.18);
+.app-tile:hover .app-icon {
+    transform: scale(1.06) rotate(-3deg);
+    background: rgba(10, 132, 255, 0.2);
 }
 
-.menu-card h2 {
-    margin: 0 0 10px 0;
+.app-text {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.app-name {
+    font-size: 1.05rem;
+    font-weight: 650;
+    letter-spacing: -0.2px;
     color: var(--text-main);
-    font-size: 1.35rem;
-    font-weight: 700;
-    letter-spacing: -0.3px;
 }
 
-.menu-card p {
-    margin: 0;
+.app-desc {
+    font-size: 0.85rem;
+    line-height: 1.4;
     color: var(--text-muted);
-    font-size: 1rem;
-    line-height: 1.5;
+}
+
+.app-chevron {
+    margin-left: auto;
+    font-size: 1.5rem;
+    line-height: 1;
+    color: var(--text-muted);
+    opacity: 0.5;
+    transition: transform 0.4s var(--ease), opacity 0.4s var(--ease);
+}
+
+.app-tile:hover .app-chevron {
+    transform: translateX(3px);
+    opacity: 0.9;
 }
 
 /* ==============================================================

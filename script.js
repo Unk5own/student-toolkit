@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderProfileBadge();
     renderGradingScaleTable();
 
-    if (document.getElementById('programme-selector')) {
+    if (document.getElementById('programme-switch')) {
         initDashboardProfile();
     } else if (document.getElementById('course-list')) {
         initGPACalculator();
@@ -673,12 +673,44 @@ window.initDashboardProfile = function() {
     if (typeof myDatabase === 'undefined') return;
 
     const profile = getProfile();
-    const progSelector = document.getElementById('programme-selector');
-    if (progSelector) progSelector.value = profile.programme;
-
+    renderProgrammeSwitch(profile.programme);
     updateWelcomeMessage(profile.programme);
     renderDashboardSummary(profile);
 };
+
+/* A segmented control instead of a dropdown: with only a couple of programmes,
+   both options fit on screen and switching is one tap rather than three. */
+function renderProgrammeSwitch(activeKey) {
+    const wrap = document.getElementById('programme-switch');
+    if (!wrap) return;
+
+    const programmes = Object.entries(myDatabase.programmes);
+
+    // A single programme has nothing to switch between.
+    if (programmes.length < 2) {
+        wrap.hidden = true;
+        return;
+    }
+
+    wrap.innerHTML = programmes.map(([key, prog]) => `
+        <button type="button" class="segment${key === activeKey ? ' is-active' : ''}"
+                data-programme="${escapeHtml(key)}" aria-pressed="${key === activeKey}">
+            ${escapeHtml(prog.short || key)}
+        </button>
+    `).join('');
+
+    wrap.querySelectorAll('[data-programme]').forEach(btn => {
+        btn.addEventListener('click', () => saveProfile(btn.dataset.programme));
+    });
+}
+
+// Greets by time of day rather than saying the same thing at 8am and 11pm.
+function greetingForNow() {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+}
 
 /* At-a-glance figures on the dashboard, read from the same saved state the
    individual tools use. Tiles for data you haven't entered yet are hidden
@@ -757,31 +789,34 @@ function renderDashboardSummary(profile) {
     `).join('');
 }
 
-window.saveProfile = function() {
-    const progSelector = document.getElementById('programme-selector');
-    if (!progSelector.value || !myDatabase.programmes[progSelector.value]) return;
+window.saveProfile = function(programmeKey) {
+    if (!programmeKey || !myDatabase.programmes[programmeKey]) return;
 
     const profile = {
-        programme: progSelector.value,
-        semester: semesterFor(progSelector.value)
+        programme: programmeKey,
+        semester: semesterFor(programmeKey)
     };
     localStorage.setItem('studentProfile', JSON.stringify(profile));
 
     // Re-render in place instead of reloading the page.
-    updateWelcomeMessage(profile.programme);
+    renderProgrammeSwitch(programmeKey);
+    updateWelcomeMessage(programmeKey);
+    renderDashboardSummary(profile);
 };
 
 window.updateWelcomeMessage = function(programmeKey) {
     const programme = myDatabase.programmes[programmeKey];
     if (!programme) return;
 
-    const headerTitle = document.querySelector('.welcome-banner h1');
-    const headerSub = document.querySelector('header .subtitle');
-    if (headerTitle) headerTitle.textContent = '👋 Welcome back!';
-    if (headerSub) {
-        headerSub.innerHTML =
-            `<strong>${escapeHtml(programme.title)}</strong> • <span id="current-date"></span>`;
-        renderCurrentDate();
+    const greeting = document.getElementById('hero-greeting');
+    const progLine = document.getElementById('hero-programme');
+
+    if (greeting) greeting.textContent = greetingForNow();
+    if (progLine) {
+        const semester = semesterFor(programmeKey);
+        progLine.textContent = semester
+            ? `${programme.short || programme.title} · Year ${semester.charAt(1)}, Semester ${semester.charAt(3)}`
+            : (programme.short || programme.title);
     }
 };
 
@@ -2042,7 +2077,7 @@ function renderProfileBadge() {
     const header = document.querySelector('header');
 
     // The dashboard shows its own programme selector, so it needs no badge.
-    const isDashboard = !!document.getElementById('programme-selector');
+    const isDashboard = !!document.getElementById('programme-switch');
     if (isDashboard || !header || typeof myDatabase === 'undefined') return;
 
     const profile = getProfile();

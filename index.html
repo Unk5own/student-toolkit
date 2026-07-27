@@ -13,77 +13,87 @@
         // Runs before first paint so dark mode never flashes white.
         document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'light');
     </script>
-
 </head>
 <body>
     <div class="dashboard">
-        
-        <div class="top-nav-bar" style="border-bottom: none; padding-bottom: 0;">
+
+        <div class="top-nav-bar top-nav-bar--home">
+            <span class="wordmark">Student&nbsp;Toolkit</span>
             <button id="theme-toggle" class="btn-dark-mode" onclick="toggleTheme()">🌙 Dark Mode</button>
         </div>
 
-        <header class="welcome-banner" style="margin-top: 10px;">
-            <h1 style="margin-top: 0;">👋 Welcome to your Student Toolkit!</h1>
-            <p class="subtitle">TARUMT Academic Dashboard • <span id="current-date"></span></p>
-            
-            <div class="programme-picker">
-                <div class="input-group-col">
-                    <label for="programme-selector">Active Programme</label>
-                    <select id="programme-selector" class="styled-select" onchange="saveProfile()">
-                        <option value="RIS" selected>BACHELOR IN INFORMATION TECHNOLOGY (HONOURS) (INFORMATION SECURITY)</option>
-                        <option value="RFI">BACHELOR OF FINANCE AND INVESTMENT (HONOURS)</option>
-                    </select>
-                </div>
+        <header class="hero">
+            <p class="hero-eyebrow" id="current-date"></p>
+            <h1 id="hero-greeting">Welcome back</h1>
+            <p class="hero-programme" id="hero-programme"></p>
+
+            <div class="segmented" id="programme-switch" role="group" aria-label="Active programme">
+                <!-- Pills injected from data.js -->
             </div>
         </header>
 
         <main>
             <div id="dashboard-summary"></div>
 
-            <div class="menu-grid">
+            <nav class="app-grid" aria-label="Tools">
 
-                <a href="timetable.html" class="menu-card">
-                    <div class="icon-wrapper">🗓️</div>
-                    <h2>Timetable</h2>
-                    <p>Your weekly class schedule, with one-tap absence logging.</p>
+                <a href="timetable.html" class="app-tile app-tile--wide">
+                    <span class="app-icon" aria-hidden="true">🗓️</span>
+                    <span class="app-text">
+                        <span class="app-name">Timetable</span>
+                        <span class="app-desc">Your weekly schedule, with one-tap absence logging</span>
+                    </span>
+                    <span class="app-chevron" aria-hidden="true">›</span>
                 </a>
 
-                <a href="attendance.html" class="menu-card">
-                    <div class="icon-wrapper">📅</div>
-                    <h2>Attendance Tracker</h2>
-                    <p>Track your safe skips and stay above the 80% limit.</p>
+                <a href="attendance.html" class="app-tile">
+                    <span class="app-icon" aria-hidden="true">📅</span>
+                    <span class="app-text">
+                        <span class="app-name">Attendance</span>
+                        <span class="app-desc">Stay above the 80% limit</span>
+                    </span>
+                    <span class="app-chevron" aria-hidden="true">›</span>
                 </a>
 
-                <a href="marks.html" class="menu-card">
-                    <div class="icon-wrapper">🎯</div>
-                    <h2>Target Marks</h2>
-                    <p>Calculate exactly what you need in your final exams.</p>
+                <a href="marks.html" class="app-tile">
+                    <span class="app-icon" aria-hidden="true">🎯</span>
+                    <span class="app-text">
+                        <span class="app-name">Target Marks</span>
+                        <span class="app-desc">What you need in the finals</span>
+                    </span>
+                    <span class="app-chevron" aria-hidden="true">›</span>
                 </a>
 
-                <a href="calculator.html" class="menu-card">
-                    <div class="icon-wrapper">📈</div>
-                    <h2>GPA Calculator</h2>
-                    <p>Track your Semester GPA and project your new CGPA.</p>
+                <a href="calculator.html" class="app-tile">
+                    <span class="app-icon" aria-hidden="true">📈</span>
+                    <span class="app-text">
+                        <span class="app-name">GPA Calculator</span>
+                        <span class="app-desc">Semester GPA and CGPA</span>
+                    </span>
+                    <span class="app-chevron" aria-hidden="true">›</span>
                 </a>
 
-                <a href="map.html" class="menu-card">
-                    <div class="icon-wrapper">🗺️</div>
-                    <h2>Campus Map</h2>
-                    <p>Interactive campus navigation and building search.</p>
+                <a href="map.html" class="app-tile">
+                    <span class="app-icon" aria-hidden="true">🗺️</span>
+                    <span class="app-text">
+                        <span class="app-name">Campus Map</span>
+                        <span class="app-desc">Search any building</span>
+                    </span>
+                    <span class="app-chevron" aria-hidden="true">›</span>
                 </a>
 
-            </div>
+            </nav>
 
             <section class="backup-panel">
                 <div>
                     <h2>Backup &amp; Restore</h2>
-                    <p>Your profile, attendance and settings live only in this browser. Save a copy before clearing your browsing data or switching phones.</p>
+                    <p>Everything is stored only in this browser. Save a copy before clearing your browsing data or switching phones.</p>
                     <p id="backup-status" class="backup-status" role="status" aria-live="polite"></p>
                 </div>
                 <div class="backup-actions">
-                    <button type="button" class="btn-add" onclick="exportData()">⬇️ Export backup</button>
+                    <button type="button" class="btn-add" onclick="exportData()">Export backup</button>
                     <label class="btn-delete backup-import">
-                        ⬆️ Restore backup
+                        Restore backup
                         <input type="file" accept="application/json,.json" class="visually-hidden"
                                onchange="importData(this.files[0]); this.value='';">
                     </label>
@@ -91,7 +101,7 @@
             </section>
         </main>
     </div>
-    
+
     <script src="data.js"></script>
     <script src="script.js"></script>
 </body>

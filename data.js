@@ -37,6 +37,7 @@ const myDatabase = {
   programmes: {
     RIS: {
       title: "BACHELOR IN INFORMATION TECHNOLOGY (HONOURS) (INFORMATION SECURITY)",
+      short: "Information Security",
       curriculum: {
         Y2S3: [
           {
@@ -89,6 +90,7 @@ const myDatabase = {
 
     RFI: {
       title: "BACHELOR OF FINANCE AND INVESTMENT (HONOURS)",
+      short: "Finance & Investment",
       curriculum: {
         Y3S1: [
           {

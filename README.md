@@ -10,7 +10,7 @@ campus map.
 
 | Page | What it does |
 |---|---|
-| `index.html` | Dashboard — lowest attendance, semester GPA, next class today, backup & restore |
+| `index.html` | Dashboard — greeting, at-a-glance stats, tool tiles, backup & restore |
 | `timetable.html` | Weekly class schedule; one tap logs a missed class against attendance |
 | `attendance.html` | Hours-based attendance with dated absence history and the 80% safe-skip limit |
 | `marks.html` | Works out the score you need in each component to reach a target grade |
@@ -124,6 +124,10 @@ Glass only reads as glass if there is something behind it, so `body::before`
 paints a fixed field of four colour blooms for the panels to refract. It is
 fixed rather than scrolling, so the material shifts against the content as you
 move down the page.
+
+The light theme leans on a deliberately vivid colour field and thinner,
+blurrier panels (42% white, 36px blur). A paler field made the panels read as
+plain white cards rather than as glass.
 
 Everything is driven by tokens at the top of `style.css` — `--glass-bg`,
 `--glass-rim`, `--glass-blur`, the `--r-*` radii and the shared `--ease` curve —
