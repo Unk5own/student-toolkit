@@ -1174,86 +1174,81 @@ body::before {
 
 /* ==============================================================
    16b. MAP LEGEND
+   --------------------------------------------------------------
+   Tabbed panels rather than a grid of accordions. Side-by-side
+   collapsible cards share a grid row, so expanding one stretched
+   its neighbour into a tall empty box that looked like it had
+   opened too. One panel at a time avoids that entirely, and
+   matches the segmented controls used elsewhere.
 ============================================================== */
 .legend { margin-top: 36px; }
 
 .legend h2 {
-    margin: 0 0 18px 0;
+    margin: 0 0 16px 0;
     font-size: 1.5rem;
     font-weight: 700;
     letter-spacing: -0.5px;
     color: var(--text-main);
 }
 
-.legend-grid {
+.legend-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.legend-panel { margin-bottom: 0; }
+.legend-panel[hidden] { display: none; }
+.legend-panel:focus { outline: none; }
+
+/* Two even columns on desktop, stacked on mobile. */
+.legend-columns {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 14px;
+    align-items: start;      /* never stretch one column to the other's height */
+    gap: 28px;
 }
-@media (min-width: 700px) {
-    .legend-grid { grid-template-columns: 1fr 1fr; }
-}
-
-.legend-card {
-    position: relative;
-    padding: 18px 22px;
-    border-radius: var(--r-md);
-    background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
-    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-    box-shadow: var(--shadow-md);
+@media (min-width: 680px) {
+    .legend-columns { grid-template-columns: 1fr 1fr; gap: 36px; }
 }
 
-.legend > .legend-card { margin-bottom: 14px; }
+.legend-subhead {
+    margin: 0 0 14px 0;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--primary);
+}
 
-.legend-card--urgent { border-color: rgba(255, 45, 85, 0.35); }
-
-.legend-card summary {
+.legend-panel-head {
     display: flex;
-    align-items: baseline;
+    flex-wrap: wrap;
+    align-items: center;
     justify-content: space-between;
-    gap: 10px;
-    cursor: pointer;
-    list-style: none;
-}
-.legend-card summary::-webkit-details-marker { display: none; }
-
-/* Chevron that rotates when the section opens. */
-.legend-card summary::after {
-    content: '›';
-    margin-left: auto;
-    font-size: 1.4rem;
-    line-height: 1;
-    color: var(--text-muted);
-    opacity: 0.6;
-    transform: rotate(90deg);
-    transition: transform 0.35s var(--ease);
-}
-.legend-card[open] summary::after { transform: rotate(-90deg); }
-
-.legend-card summary:focus-visible {
-    outline: 2px solid var(--primary);
-    outline-offset: 4px;
-    border-radius: var(--r-sm);
-}
-
-.legend-title {
-    font-size: 1.02rem;
-    font-weight: 650;
-    letter-spacing: -0.2px;
-    color: var(--text-main);
-}
-
-.legend-count {
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--text-muted);
+    gap: 12px;
+    margin-bottom: 16px;
 }
 
 .legend-hint {
-    margin: 12px 0 0 0;
-    font-size: 0.82rem;
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.legend-filter {
+    width: auto;
+    min-width: 200px;
+    flex: 1 1 200px;
+    max-width: 320px;
+    padding: 9px 14px;
+    font-size: 0.9rem;
+    border-radius: var(--r-pill);
+}
+
+.legend-empty {
+    margin: 14px 0 0 0;
+    font-size: 0.9rem;
     color: var(--text-muted);
 }
 
@@ -1261,18 +1256,17 @@ body::before {
 .legend-list {
     display: grid;
     grid-template-columns: auto 1fr;
-    gap: 8px 14px;
-    margin: 16px 0 0 0;
+    gap: 10px 14px;
+    margin: 0;
     font-size: 0.88rem;
 }
 .legend-list--wide { grid-template-columns: 1fr; gap: 4px; }
-.legend-list--wide dt { margin-top: 10px; }
+.legend-list--wide dt { margin-top: 14px; }
 .legend-list--wide dt:first-child { margin-top: 0; }
 
 .legend-list dt {
     font-weight: 700;
-    color: var(--primary);
-    font-variant-numeric: tabular-nums;
+    color: var(--text-main);
     white-space: nowrap;
 }
 
@@ -1283,30 +1277,30 @@ body::before {
 }
 
 .legend-bullets {
-    margin: 16px 0 0 0;
+    margin: 0;
     padding-left: 20px;
     font-size: 0.88rem;
-    line-height: 1.7;
+    line-height: 1.8;
     color: var(--text-muted);
 }
 
 .legend-contacts {
     list-style: none;
-    margin: 16px 0 0 0;
+    margin: 0;
     padding: 0;
 }
 
 .legend-contacts li {
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    padding: 10px 0;
+    gap: 3px;
+    padding: 12px 0;
     border-top: 1px solid var(--hairline);
 }
 .legend-contacts li:first-child { border-top: none; padding-top: 0; }
 
 .legend-label {
-    font-size: 0.78rem;
+    font-size: 0.76rem;
     font-weight: 700;
     letter-spacing: 0.3px;
     text-transform: uppercase;
@@ -1314,7 +1308,7 @@ body::before {
 }
 
 .legend-contacts a {
-    font-size: 1.02rem;
+    font-size: 1.05rem;
     font-weight: 650;
     color: var(--primary);
     text-decoration: none;
@@ -1323,14 +1317,14 @@ body::before {
 
 .legend-note {
     font-size: 0.82rem;
-    line-height: 1.5;
+    line-height: 1.6;
     color: var(--text-muted);
 }
 
 .legend-address {
-    margin: 16px 0 0 0;
-    font-size: 0.9rem;
-    line-height: 1.6;
+    margin: 0 0 16px 0;
+    font-size: 0.92rem;
+    line-height: 1.65;
     color: var(--text-muted);
 }
 
@@ -1339,7 +1333,6 @@ body::before {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin-top: 14px;
 }
 
 .legend-place {

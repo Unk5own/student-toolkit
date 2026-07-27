@@ -626,8 +626,12 @@ function setupMapInteraction(mapElement, mapContainer) {
         emergencyBtn.title = `Show ${points.length} emergency assembly points`;
     }
 
-    // 5. Legend index — every searchable place, listed A-Z. Built from the same
-    //    directory the search uses, so the two can never disagree.
+    // 5. Legend — tabbed sections, with an A-Z index of every searchable place
+    //    built from the same directory the search uses so the two cannot
+    //    disagree.
+    const legendTabs = document.querySelector('.legend-tabs');
+    if (legendTabs) initTabList(legendTabs);
+
     const placesList = document.getElementById('legend-places');
     if (placesList) {
         const places = [...new Set(Object.values(campusDirectory))]
@@ -650,8 +654,32 @@ function setupMapInteraction(mapElement, mapContainer) {
             });
         });
 
-        const count = document.getElementById('legend-places-count');
-        if (count) count.textContent = `${places.length} places`;
+        // 58 places is a lot to scan, so let them be narrowed down. Matches on
+        // the display name or any of its search aliases.
+        const filter = document.getElementById('legend-filter');
+        const noMatch = document.getElementById('legend-no-match');
+
+        if (filter) {
+            const aliasesFor = id => Object.entries(campusDirectory)
+                .filter(([, target]) => target === id)
+                .map(([alias]) => alias)
+                .join(' ');
+
+            const haystack = new Map(places.map(p => [p.id, `${p.name} ${aliasesFor(p.id)}`.toLowerCase()]));
+
+            filter.addEventListener('input', () => {
+                const query = filter.value.toLowerCase().trim();
+                let shown = 0;
+
+                placesList.querySelectorAll('[data-place]').forEach(btn => {
+                    const hit = query === '' || haystack.get(btn.dataset.place).includes(query);
+                    btn.hidden = !hit;
+                    if (hit) shown++;
+                });
+
+                if (noMatch) noMatch.hidden = shown > 0;
+            });
+        }
     }
 }
 
@@ -1376,46 +1404,57 @@ window.resetAttendance = function() {
     }
 }
 
-window.switchTab = function(tabName, { focusTab = false } = {}) {
-    const tabs = {
-        y2s3:   { btn: document.getElementById('tab-y2s3'),   panel: document.getElementById('y2s3-container') },
-        custom: { btn: document.getElementById('tab-custom'), panel: document.getElementById('custom-container') }
+/* Shared ARIA tablist behaviour, used by the attendance tabs and the map
+   legend. Each tab points at its panel via aria-controls. Roving tabindex
+   means Tab moves past the tablist rather than through every tab. */
+function initTabList(tablist) {
+    const tabs = [...tablist.querySelectorAll('[role="tab"]')];
+    if (tabs.length === 0) return null;
+
+    const select = (index, focusTab) => {
+        tabs.forEach((tab, i) => {
+            const active = i === index;
+            tab.classList.toggle('is-active', active);
+            tab.setAttribute('aria-selected', String(active));
+            tab.tabIndex = active ? 0 : -1;
+
+            const panel = document.getElementById(tab.getAttribute('aria-controls'));
+            if (panel) panel.hidden = !active;
+
+            if (active && focusTab) tab.focus();
+        });
     };
 
-    Object.entries(tabs).forEach(([name, { btn, panel }]) => {
-        const active = name === tabName;
-        btn.classList.toggle('is-active', active);
-        btn.setAttribute('aria-selected', String(active));
-        // Roving tabindex: only the selected tab is in the tab order, so Tab
-        // moves past the tablist rather than through every tab.
-        btn.tabIndex = active ? 0 : -1;
-        panel.hidden = !active;
-        if (active && focusTab) btn.focus();
-    });
-}
+    tabs.forEach((tab, i) => {
+        tab.addEventListener('click', () => select(i, false));
 
-function initAttendanceTabs() {
-    const tablist = document.querySelector('[role="tablist"]');
-    if (!tablist) return;
-
-    const order = ['y2s3', 'custom'];
-    const tabs = order.map(name => document.getElementById(`tab-${name}`));
-
-    tabs.forEach((btn, i) => {
-        btn.addEventListener('click', () => switchTab(order[i]));
-
-        btn.addEventListener('keydown', (e) => {
+        tab.addEventListener('keydown', (e) => {
             const moves = {
-                ArrowRight: (i + 1) % order.length,
-                ArrowLeft:  (i - 1 + order.length) % order.length,
+                ArrowRight: (i + 1) % tabs.length,
+                ArrowLeft:  (i - 1 + tabs.length) % tabs.length,
                 Home: 0,
-                End: order.length - 1
+                End: tabs.length - 1
             };
             if (!(e.key in moves)) return;
             e.preventDefault();
-            switchTab(order[moves[e.key]], { focusTab: true });
+            select(moves[e.key], true);
         });
     });
+
+    return select;
+}
+
+let selectAttendanceTab = null;
+
+window.switchTab = function(tabName, { focusTab = false } = {}) {
+    if (!selectAttendanceTab) return;
+    selectAttendanceTab(tabName === 'custom' ? 1 : 0, focusTab);
+}
+
+function initAttendanceTabs() {
+    const tablist = document.querySelector('.tab-bar[role="tablist"]');
+    if (!tablist) return;
+    selectAttendanceTab = initTabList(tablist);
 }
 
 

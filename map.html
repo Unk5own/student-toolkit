@@ -161,122 +161,147 @@
                 </div>
             </div>
 
-            <!-- Everything printed on the paper map's legend, transcribed so it
-                 is readable and searchable without zooming into the artwork. -->
+            <!-- The paper map prints its legend into the artwork, where it can only
+                 be read by zooming in. Transcribed here so it is legible, tappable
+                 and searchable. -->
             <section class="legend" aria-labelledby="legend-heading">
                 <h2 id="legend-heading">Map Legend</h2>
 
-                <details class="legend-card" open>
-                    <summary>
-                        <span class="legend-title">All places</span>
-                        <span class="legend-count" id="legend-places-count"></span>
-                    </summary>
-                    <p class="legend-hint">Tap any place to find it on the map.</p>
+                <div class="segmented legend-tabs" role="tablist" aria-label="Legend sections">
+                    <button role="tab" class="segment is-active" id="lt-places"
+                            aria-selected="true" aria-controls="legend-panel-places" tabindex="0">Places</button>
+                    <button role="tab" class="segment" id="lt-abbr"
+                            aria-selected="false" aria-controls="legend-panel-abbr" tabindex="-1">Abbreviations</button>
+                    <button role="tab" class="segment" id="lt-safety"
+                            aria-selected="false" aria-controls="legend-panel-safety" tabindex="-1">Emergency</button>
+                    <button role="tab" class="segment" id="lt-campus"
+                            aria-selected="false" aria-controls="legend-panel-campus" tabindex="-1">Campus</button>
+                </div>
+
+                <div class="legend-panel card-section" id="legend-panel-places"
+                     role="tabpanel" aria-labelledby="lt-places" tabindex="0">
+                    <div class="legend-panel-head">
+                        <p class="legend-hint">Tap a place to find it on the map.</p>
+                        <label for="legend-filter" class="visually-hidden">Filter places</label>
+                        <input type="search" id="legend-filter" class="styled-select legend-filter"
+                               placeholder="Filter places&hellip;" autocomplete="off">
+                    </div>
                     <div class="legend-places" id="legend-places"></div>
-                </details>
+                    <p class="legend-empty" id="legend-no-match" hidden>Nothing matches that.</p>
+                </div>
 
-                <div class="legend-grid">
+                <div class="legend-panel card-section" id="legend-panel-abbr"
+                     role="tabpanel" aria-labelledby="lt-abbr" tabindex="0" hidden>
+                    <div class="legend-columns">
+                        <div>
+                            <h3 class="legend-subhead">Faculties &amp; centres</h3>
+                            <dl class="legend-list">
+                                <dt>FOAS</dt><dd>Faculty of Applied Sciences</dd>
+                                <dt>FOCS</dt><dd>Faculty of Computing &amp; Information Technology</dd>
+                                <dt>FAFB</dt><dd>Faculty of Accounting, Finance and Business</dd>
+                                <dt>FOET</dt><dd>Faculty of Engineering and Technology</dd>
+                                <dt>FOBE</dt><dd>Faculty of Built Environment</dd>
+                                <dt>FSSH</dt><dd>Faculty of Social Science and Humanities</dd>
+                                <dt>FCCI</dt><dd>Faculty of Communication and Creative Industries</dd>
+                                <dt>CPUS</dt><dd>Centre for Pre-University Studies</dd>
+                                <dt>CPSR</dt><dd>Centre for Postgraduate Studies and Research</dd>
+                                <dt>CPE</dt><dd>Centre for Continuing &amp; Professional Education</dd>
+                                <dt>CBIEV</dt><dd>Centre for Business Incubation &amp; Entrepreneurial Ventures</dd>
+                            </dl>
+                        </div>
+                        <div>
+                            <h3 class="legend-subhead">Departments</h3>
+                            <dl class="legend-list">
+                                <dt>DSA</dt><dd>Department of Student Affairs</dd>
+                                <dt>DOS</dt><dd>Department of Security</dd>
+                                <dt>DISO</dt><dd>Department of International Student Office</dd>
+                                <dt>CITC</dt><dd>Communication &amp; Information Technology Centre</dd>
+                                <dt>DACE</dt><dd>Department of Admissions &amp; Credit Evaluation</dd>
+                                <dt>DECA</dt><dd>Department of Examinations and Credit Accumulation</dd>
+                                <dt>DFM</dt><dd>Department of Facilities Management</dd>
+                                <dt>DAR</dt><dd>Department of Alumni Relations</dd>
+                                <dt>DFIN</dt><dd>Department of Finance</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
 
-                    <details class="legend-card">
-                        <summary><span class="legend-title">Faculties &amp; centres</span></summary>
-                        <dl class="legend-list">
-                            <dt>FOAS</dt><dd>Faculty of Applied Sciences</dd>
-                            <dt>FOCS</dt><dd>Faculty of Computing &amp; Information Technology</dd>
-                            <dt>FAFB</dt><dd>Faculty of Accounting, Finance and Business</dd>
-                            <dt>FOET</dt><dd>Faculty of Engineering and Technology</dd>
-                            <dt>FOBE</dt><dd>Faculty of Built Environment</dd>
-                            <dt>FSSH</dt><dd>Faculty of Social Science and Humanities</dd>
-                            <dt>FCCI</dt><dd>Faculty of Communication and Creative Industries</dd>
-                            <dt>CPUS</dt><dd>Centre for Pre-University Studies</dd>
-                            <dt>CPSR</dt><dd>Centre for Postgraduate Studies and Research</dd>
-                            <dt>CPE</dt><dd>Centre for Continuing &amp; Professional Education</dd>
-                            <dt>CBIEV</dt><dd>Centre for Business Incubation &amp; Entrepreneurial Ventures</dd>
-                        </dl>
-                    </details>
+                <div class="legend-panel card-section" id="legend-panel-safety"
+                     role="tabpanel" aria-labelledby="lt-safety" tabindex="0" hidden>
+                    <div class="legend-columns">
+                        <div>
+                            <h3 class="legend-subhead">Who to call</h3>
+                            <ul class="legend-contacts">
+                                <li>
+                                    <span class="legend-label">TARUMT Security Helpline</span>
+                                    <a href="tel:+60341450250">+603 - 4145 0250</a>
+                                </li>
+                                <li>
+                                    <span class="legend-label">First Aid Unit (FAU)</span>
+                                    <a href="tel:+60341450123">+603 - 4145 0123</a>
+                                    <span class="legend-note">extension 7784</span>
+                                </li>
+                                <li>
+                                    <span class="legend-label">Klinik Low</span>
+                                    <a href="tel:+601111186918">+6011 - 1118 6918</a>
+                                    <span class="legend-note">
+                                        Mon&ndash;Fri 9:00am &ndash; 6:00pm<br>
+                                        Sat 9:00am &ndash; 1:00pm &middot; Sun 9:00am &ndash; 12:00pm<br>
+                                        Closed on public holidays
+                                    </span>
+                                </li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 class="legend-subhead">Defibrillators (AED)</h3>
+                            <ul class="legend-bullets">
+                                <li>DSA</li>
+                                <li>Main Gate Guard House</li>
+                                <li>Arena Level 6</li>
+                                <li>Club House Counter</li>
+                                <li>East Campus Guard House</li>
+                                <li>East Campus Block SA</li>
+                            </ul>
+                            <p class="legend-hint">
+                                The &#9888; button on the map lights up all 18 emergency assembly points.
+                            </p>
+                        </div>
+                    </div>
+                </div>
 
-                    <details class="legend-card">
-                        <summary><span class="legend-title">Departments</span></summary>
-                        <dl class="legend-list">
-                            <dt>DSA</dt><dd>Department of Student Affairs</dd>
-                            <dt>DOS</dt><dd>Department of Security</dd>
-                            <dt>DISO</dt><dd>Department of International Student Office</dd>
-                            <dt>CITC</dt><dd>Communication &amp; Information Technology Centre</dd>
-                            <dt>DACE</dt><dd>Department of Admissions &amp; Credit Evaluation</dd>
-                            <dt>DECA</dt><dd>Department of Examinations and Credit Accumulation</dd>
-                            <dt>DFM</dt><dd>Department of Facilities Management</dd>
-                            <dt>DAR</dt><dd>Department of Alumni Relations</dd>
-                            <dt>DFIN</dt><dd>Department of Finance</dd>
-                        </dl>
-                    </details>
-
-                    <details class="legend-card legend-card--urgent">
-                        <summary><span class="legend-title">Emergency &amp; health</span></summary>
-                        <ul class="legend-contacts">
-                            <li>
-                                <span class="legend-label">TARUMT Security Helpline</span>
-                                <a href="tel:+60341450250">+603 - 4145 0250</a>
-                            </li>
-                            <li>
-                                <span class="legend-label">First Aid Unit (FAU)</span>
-                                <a href="tel:+60341450123">+603 - 4145 0123</a> <span class="legend-note">ext 7784</span>
-                            </li>
-                            <li>
-                                <span class="legend-label">Klinik Low</span>
-                                <a href="tel:+601111186918">+6011 - 1118 6918</a>
-                                <span class="legend-note">
-                                    Mon–Fri 9:00am – 6:00pm · Sat 9:00am – 1:00pm ·
-                                    Sun 9:00am – 12:00pm · closed on public holidays
-                                </span>
-                            </li>
-                        </ul>
-                        <p class="legend-hint">
-                            Use the ⚠ button on the map to light up all 18 emergency assembly points.
-                        </p>
-                    </details>
-
-                    <details class="legend-card">
-                        <summary><span class="legend-title">Defibrillators (AED)</span></summary>
-                        <ul class="legend-bullets">
-                            <li>DSA</li>
-                            <li>Main Gate Guard House</li>
-                            <li>Arena Level 6</li>
-                            <li>Club House Counter</li>
-                            <li>East Campus Guard House</li>
-                            <li>East Campus Block SA</li>
-                        </ul>
-                    </details>
-
-                    <details class="legend-card">
-                        <summary><span class="legend-title">What's in which block</span></summary>
-                        <dl class="legend-list legend-list--wide">
-                            <dt>Block A</dt>
-                            <dd>DSA (Ground) · DAR (Ground) · DECA (1st) · FOAS (2nd) · FOCS (2nd)</dd>
-                            <dt>Bangunan Tun Tan Siew Sin</dt>
-                            <dd>DACE (Ground) · DISO (Ground &amp; 1st) · DFIN (2nd)</dd>
-                            <dt>TARUMT Arena</dt>
-                            <dd>DOS (1st) · CPE (1st) · CBIEV (1st) · FAU (Ground) · Klinik Low (Ground)</dd>
-                        </dl>
-                    </details>
-
-                    <details class="legend-card">
-                        <summary><span class="legend-title">Getting here</span></summary>
-                        <p class="legend-address">
-                            Jalan Genting Kelang, Setapak,<br>
-                            53300 Kuala Lumpur,<br>
-                            Wilayah Persekutuan Kuala Lumpur
-                        </p>
-                        <ul class="legend-contacts">
-                            <li>
-                                <span class="legend-label">Main line</span>
-                                <a href="tel:+60341450100">+60 3 - 4145 0100/23</a>
-                            </li>
-                            <li>
-                                <span class="legend-label">Nearest LRT</span>
-                                <span class="legend-note">Taman Melati Station, Kelana Jaya Line</span>
-                            </li>
-                        </ul>
-                    </details>
-
+                <div class="legend-panel card-section" id="legend-panel-campus"
+                     role="tabpanel" aria-labelledby="lt-campus" tabindex="0" hidden>
+                    <div class="legend-columns">
+                        <div>
+                            <h3 class="legend-subhead">What&rsquo;s in which block</h3>
+                            <dl class="legend-list legend-list--wide">
+                                <dt>Block A</dt>
+                                <dd>DSA (Ground) &middot; DAR (Ground) &middot; DECA (1st) &middot; FOAS (2nd) &middot; FOCS (2nd)</dd>
+                                <dt>Bangunan Tun Tan Siew Sin</dt>
+                                <dd>DACE (Ground) &middot; DISO (Ground &amp; 1st) &middot; DFIN (2nd)</dd>
+                                <dt>TARUMT Arena</dt>
+                                <dd>DOS (1st) &middot; CPE (1st) &middot; CBIEV (1st) &middot; FAU (Ground) &middot; Klinik Low (Ground)</dd>
+                            </dl>
+                        </div>
+                        <div>
+                            <h3 class="legend-subhead">Getting here</h3>
+                            <p class="legend-address">
+                                Jalan Genting Kelang, Setapak,<br>
+                                53300 Kuala Lumpur,<br>
+                                Wilayah Persekutuan Kuala Lumpur
+                            </p>
+                            <ul class="legend-contacts">
+                                <li>
+                                    <span class="legend-label">Main line</span>
+                                    <a href="tel:+60341450100">+60 3 - 4145 0100/23</a>
+                                </li>
+                                <li>
+                                    <span class="legend-label">Nearest LRT</span>
+                                    <span class="legend-note">Taman Melati Station, Kelana Jaya Line</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
             </section>
         </main>
