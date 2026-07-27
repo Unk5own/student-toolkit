@@ -460,10 +460,21 @@ function setupMapInteraction(mapElement, mapContainer) {
     const searchInput = document.getElementById('map-search');
     const resultsList = document.getElementById('map-results');
 
+    // Offered whenever something is lit up on the map, whether that came from
+    // the search or from the legend's place index.
+    const clearBtn = document.getElementById('legend-clear');
+
+    function syncClearButton() {
+        if (!clearBtn) return;
+        clearBtn.hidden = !document.querySelector('.building-highlight, .label-highlight');
+    }
+
     function clearHighlights() {
         document.querySelectorAll('.building-highlight, .label-highlight').forEach(el => {
             el.classList.remove('building-highlight', 'label-highlight');
         });
+        document.querySelectorAll('.legend-place.is-active').forEach(el => el.classList.remove('is-active'));
+        syncClearButton();
     }
 
     function focusPlace(id) {
@@ -472,6 +483,7 @@ function setupMapInteraction(mapElement, mapContainer) {
 
         clearHighlights();
         target.classList.add(LABEL_ONLY_TARGETS.has(id) ? 'label-highlight' : 'building-highlight');
+        syncClearButton();
 
         const bbox = target.getBBox();
         const svgCenterX = bbox.x + (bbox.width / 2);
@@ -646,13 +658,26 @@ function setupMapInteraction(mapElement, mapContainer) {
 
         placesList.querySelectorAll('[data-place]').forEach(btn => {
             btn.addEventListener('click', () => {
+                // Tapping the lit-up place again turns it back off.
+                if (btn.classList.contains('is-active')) {
+                    clearHighlights();
+                    return;
+                }
+
                 focusPlace(btn.dataset.place);
-                placesList.querySelectorAll('.legend-place').forEach(b => b.classList.remove('is-active'));
                 btn.classList.add('is-active');
                 // The map is above the legend, so bring it back into view.
                 mapContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
             });
         });
+
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                clearHighlights();
+                searchInput.value = '';
+                closeResults();
+            });
+        }
 
         // 58 places is a lot to scan, so let them be narrowed down. Matches on
         // the display name or any of its search aliases.

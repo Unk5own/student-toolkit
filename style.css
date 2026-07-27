@@ -1230,6 +1230,22 @@ body::before {
     margin-bottom: 16px;
 }
 
+.legend-panel-tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+}
+
+/* Only shown while something is actually lit up on the map. */
+.legend-clear {
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+.legend-clear[hidden] { display: none; }
+
 .legend-hint {
     margin: 0;
     font-size: 0.85rem;

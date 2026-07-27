@@ -182,9 +182,14 @@
                      role="tabpanel" aria-labelledby="lt-places" tabindex="0">
                     <div class="legend-panel-head">
                         <p class="legend-hint">Tap a place to find it on the map.</p>
-                        <label for="legend-filter" class="visually-hidden">Filter places</label>
-                        <input type="search" id="legend-filter" class="styled-select legend-filter"
-                               placeholder="Filter places&hellip;" autocomplete="off">
+                        <div class="legend-panel-tools">
+                            <button type="button" id="legend-clear" class="btn-delete legend-clear" hidden>
+                                Clear highlight
+                            </button>
+                            <label for="legend-filter" class="visually-hidden">Filter places</label>
+                            <input type="search" id="legend-filter" class="styled-select legend-filter"
+                                   placeholder="Filter places&hellip;" autocomplete="off">
+                        </div>
                     </div>
                     <div class="legend-places" id="legend-places"></div>
                     <p class="legend-empty" id="legend-no-match" hidden>Nothing matches that.</p>
