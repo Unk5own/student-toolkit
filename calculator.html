@@ -2,25 +2,28 @@
 <html lang="en">
 <head>
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#D9534F">
+    <meta name="theme-color" content="#0d6efd">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GPA / CGPA Calculator | Student Toolkit</title>
     <link rel="stylesheet" href="style.css">
+    <script>
+        // Runs before first paint so dark mode never flashes white.
+        document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'light');
+    </script>
     <style>
-        .split-layout { display: grid; grid-template-columns: 1fr; gap: 30px; }
+        /* Page-specific: wider breakpoint and more compact grade dropdowns
+           than the shared defaults in style.css. */
         @media (min-width: 800px) { .split-layout { grid-template-columns: 1.2fr 1fr; } }
-        
-        select.styled-select {
-            padding: 8px; border-radius: 6px; font-family: inherit; font-size: 0.9rem;
-            background-color: var(--input-bg); color: var(--text-main); border: 1px solid var(--border);
-        }
+
+        .grade-select { width: 130px; padding: 8px; font-size: 0.9rem; cursor: pointer; }
     </style>
+
 </head>
-<body data-theme="light">
-    <div class="dashboard" style="max-width: 900px; padding: 20px; margin: 0 auto; box-sizing: border-box;">
+<body>
+    <div class="dashboard" style="max-width: 900px;">
         
         <div class="top-nav-bar">
             <a href="index.html" class="btn-back">
@@ -33,12 +36,12 @@
             <button id="theme-toggle" class="btn-dark-mode" onclick="toggleTheme()">🌙 Dark Mode</button>
         </div>
         
-        <header style="text-align: center; margin-bottom: 40px;">
-            <h1 style="margin: 0; font-size: 2.2rem; color: var(--text-main);">GPA Calculator</h1>
+        <header class="page-header">
+            <h1>GPA Calculator</h1>
             <span class="subtitle">Track your Semester and Cumulative GPA</span>
         </header>
 
-        <main class="content-area" style="display: block !important; background: transparent; border: none; box-shadow: none; padding: 0;">
+        <main>
             <div class="split-layout">
                 
                 <!-- LEFT COLUMN: Subjects -->
@@ -76,25 +79,7 @@
                     <!-- Grading Scale Table (Moved Here!) -->
                     <div class="card-section" style="margin: 0;">
                         <h3 style="margin: 0 0 15px 0; font-size: 1.1rem; text-align: center; color: var(--text-main);">TAR UMT Grading Scale</h3>
-                        <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
-                            <thead>
-                                <tr style="border-bottom: 2px solid var(--border);">
-                                    <th style="text-align: left; padding: 5px; color: var(--text-main);">Grade</th>
-                                    <th style="text-align: center; padding: 5px; color: var(--text-main);">Marks</th>
-                                    <th style="text-align: right; padding: 5px; color: var(--text-main);">Point</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr><td style="color: var(--text-muted); padding: 6px 5px;">A</td><td style="text-align: center; color: var(--text-muted);">80-100</td><td style="text-align: right; color: var(--text-muted);">4.00</td></tr>
-                                <tr><td style="color: var(--text-muted); padding: 6px 5px;">A-</td><td style="text-align: center; color: var(--text-muted);">75-79</td><td style="text-align: right; color: var(--text-muted);">3.67</td></tr>
-                                <tr><td style="color: var(--text-muted); padding: 6px 5px;">B+</td><td style="text-align: center; color: var(--text-muted);">70-74</td><td style="text-align: right; color: var(--text-muted);">3.33</td></tr>
-                                <tr><td style="color: var(--text-muted); padding: 6px 5px;">B</td><td style="text-align: center; color: var(--text-muted);">65-69</td><td style="text-align: right; color: var(--text-muted);">3.00</td></tr>
-                                <tr><td style="color: var(--text-muted); padding: 6px 5px;">B-</td><td style="text-align: center; color: var(--text-muted);">60-64</td><td style="text-align: right; color: var(--text-muted);">2.67</td></tr>
-                                <tr><td style="color: var(--text-muted); padding: 6px 5px;">C+</td><td style="text-align: center; color: var(--text-muted);">55-59</td><td style="text-align: right; color: var(--text-muted);">2.33</td></tr>
-                                <tr><td style="color: var(--text-muted); padding: 6px 5px;">C</td><td style="text-align: center; color: var(--text-muted);">50-54</td><td style="text-align: right; color: var(--text-muted);">2.00</td></tr>
-                                <tr><td style="color: var(--danger); padding: 6px 5px;">F</td><td style="text-align: center; color: var(--danger);">0-49</td><td style="text-align: right; color: var(--danger);">0.00</td></tr>
-                            </tbody>
-                        </table>
+                        <table class="scale-table" data-grading-scale style="font-size: 0.9rem;"></table>
                     </div>
 
                 </div>

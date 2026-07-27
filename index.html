@@ -2,119 +2,20 @@
 <html lang="en">
 <head>
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#D9534F">
+    <meta name="theme-color" content="#0d6efd">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Toolkit | Home</title>
     <link rel="stylesheet" href="style.css">
-    <style>
-        /* Smooth page load animation */
-        @keyframes fadeUp { 
-            from { opacity: 0; transform: translateY(15px); } 
-            to { opacity: 1; transform: translateY(0); } 
-        }
-        
-        .dashboard { 
-            animation: fadeUp 0.6s ease-out; 
-            position: relative; /* Locks the dark mode button inside */
-            padding: 20px;
-            max-width: 1000px;
-            margin: 0 auto;
-        }
+    <script>
+        // Runs before first paint so dark mode never flashes white.
+        document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'light');
+    </script>
 
-        #theme-toggle:hover {
-            border-color: var(--primary);
-            color: var(--primary);
-        }
-
-        /* New Welcome Banner to fill the empty space */
-        .welcome-banner {
-            background: linear-gradient(135deg, rgba(0, 123, 255, 0.08), rgba(0, 123, 255, 0.02));
-            border: 1px solid var(--border);
-            border-radius: 24px;
-            padding: 40px 20px;
-            text-align: center;
-            margin-top: 60px; /* Space for the absolute button */
-            margin-bottom: 40px;
-        }
-        .welcome-banner h1 {
-            margin: 0 0 10px 0;
-            font-size: 2.2rem;
-            color: var(--text-main);
-            letter-spacing: -0.5px;
-        }
-        .welcome-banner p {
-            margin: 0;
-            font-size: 1.1rem;
-            color: var(--text-muted);
-            font-weight: 500;
-        }
-
-        /* Grid Layout */
-        .menu-grid {
-            display: grid; 
-            grid-template-columns: 1fr; 
-            gap: 30px; 
-        }
-        @media (min-width: 800px) {
-            .menu-grid { grid-template-columns: repeat(3, 1fr); }
-        }
-
-        /* Bigger, Modern App Cards */
-        .menu-card {
-            background: var(--bg-color);
-            border: 1px solid var(--border);
-            border-radius: 28px; 
-            padding: 50px 30px; /* Massively increased padding */
-            text-align: center;
-            text-decoration: none;
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-        }
-
-        .menu-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.08);
-            border-color: var(--primary);
-        }
-
-        /* Icon Circular Wrapper - Larger */
-        .icon-wrapper {
-            width: 90px;
-            height: 90px;
-            margin: 0 auto 25px auto;
-            background: rgba(128, 128, 128, 0.08);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.8rem; /* Bigger Emojis */
-            transition: transform 0.3s ease, background 0.3s ease;
-        }
-
-        .menu-card:hover .icon-wrapper {
-            transform: scale(1.1);
-            background: rgba(0, 123, 255, 0.1); 
-        }
-
-        /* Card Typography - Larger */
-        .menu-card h2 { 
-            margin: 0 0 12px 0; 
-            color: var(--text-main); 
-            font-size: 1.5rem; 
-            font-weight: 700; 
-        }
-        .menu-card p { 
-            margin: 0; 
-            color: var(--text-muted); 
-            font-size: 1.05rem; 
-            line-height: 1.5; 
-        }
-    </style>
 </head>
-<body data-theme="light">
+<body>
     <div class="dashboard">
         
         <div class="top-nav-bar" style="border-bottom: none; padding-bottom: 0;">
@@ -125,10 +26,10 @@
             <h1 style="margin-top: 0;">👋 Welcome to your Student Toolkit!</h1>
             <p class="subtitle">TARUMT Academic Dashboard • <span id="current-date"></span></p>
             
-            <div style="display: flex; justify-content: center; margin-top: 25px; align-items: center; background: var(--input-bg); padding: 15px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 4px 6px rgba(0,0,0,0.02); max-width: 700px; margin-left: auto; margin-right: auto;">
-                <div class="input-group-col" style="flex: 1; text-align: left;">
-                    <label style="font-size: 0.85rem; font-weight: 600; color: var(--primary); margin-bottom: 5px;">Active Programme</label>
-                    <select id="programme-selector" class="styled-select" onchange="saveProfile()" style="padding: 10px; width: 100%;">
+            <div class="programme-picker">
+                <div class="input-group-col">
+                    <label for="programme-selector">Active Programme</label>
+                    <select id="programme-selector" class="styled-select" onchange="saveProfile()">
                         <option value="RIS" selected>BACHELOR IN INFORMATION TECHNOLOGY (HONOURS) (INFORMATION SECURITY)</option>
                         <option value="RFI">BACHELOR OF FINANCE AND INVESTMENT (HONOURS)</option>
                     </select>
@@ -136,9 +37,17 @@
             </div>
         </header>
 
-        <main class="content-area" style="background: transparent; border: none; box-shadow: none; padding: 0;">
+        <main>
+            <div id="dashboard-summary"></div>
+
             <div class="menu-grid">
-                
+
+                <a href="timetable.html" class="menu-card">
+                    <div class="icon-wrapper">🗓️</div>
+                    <h2>Timetable</h2>
+                    <p>Your weekly class schedule, with one-tap absence logging.</p>
+                </a>
+
                 <a href="attendance.html" class="menu-card">
                     <div class="icon-wrapper">📅</div>
                     <h2>Attendance Tracker</h2>
@@ -164,15 +73,26 @@
                 </a>
 
             </div>
+
+            <section class="backup-panel">
+                <div>
+                    <h2>Backup &amp; Restore</h2>
+                    <p>Your profile, attendance and settings live only in this browser. Save a copy before clearing your browsing data or switching phones.</p>
+                    <p id="backup-status" class="backup-status" role="status" aria-live="polite"></p>
+                </div>
+                <div class="backup-actions">
+                    <button type="button" class="btn-add" onclick="exportData()">⬇️ Export backup</button>
+                    <label class="btn-delete backup-import">
+                        ⬆️ Restore backup
+                        <input type="file" accept="application/json,.json" class="visually-hidden"
+                               onchange="importData(this.files[0]); this.value='';">
+                    </label>
+                </div>
+            </section>
         </main>
     </div>
     
     <script src="data.js"></script>
     <script src="script.js"></script>
-    <script>
-        // Simple script to display today's date in the welcome banner
-        const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        document.getElementById('current-date').innerText = new Date().toLocaleDateString('en-MY', dateOptions);
-    </script>
 </body>
 </html>

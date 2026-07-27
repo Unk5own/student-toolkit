@@ -2,16 +2,20 @@
 <html lang="en">
 <head>
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#D9534F">
+    <meta name="theme-color" content="#0d6efd">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Attendance Tracker | Student Toolkit</title>
     <link rel="stylesheet" href="style.css">
+    <script>
+        // Runs before first paint so dark mode never flashes white.
+        document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'light');
+    </script>
 </head>
-<body data-theme="light">
-    <div class="dashboard" style="max-width: 800px; padding: 20px; margin: 0 auto; box-sizing: border-box;">
+<body>
+    <div class="dashboard" style="max-width: 800px;">
         
         <div class="top-nav-bar">
             <a href="index.html" class="btn-back">
@@ -24,13 +28,13 @@
             <button id="theme-toggle" class="btn-dark-mode" onclick="toggleTheme()">🌙 Dark Mode</button>
         </div>
 
-        <header style="text-align: center; margin-bottom: 40px;">
-            <h1 style="margin: 0; font-size: 2.2rem; color: var(--text-main);">Attendance Tracker</h1>
+        <header class="page-header">
+            <h1>Attendance Tracker</h1>
             <span class="subtitle">Track your safe skips and stay above the 80% limit</span>
         </header>
 
-        <main class="content-area" style="display: block !important; background: transparent; border: none; box-shadow: none; padding: 0;">
-            
+        <main>
+
             <div style="display: flex; border-bottom: 2px solid var(--border); margin-bottom: 25px;">
                 <button id="tab-y2s3" onclick="switchTab('y2s3')" style="flex: 1; background: transparent; border: none; padding: 15px; color: var(--danger); font-weight: bold; font-size: 1.1rem; border-bottom: 3px solid var(--danger); cursor: pointer; transition: all 0.2s;">Y2S3 Subjects</button>
                 <button id="tab-custom" onclick="switchTab('custom')" style="flex: 1; background: transparent; border: none; padding: 15px; color: var(--text-muted); font-weight: bold; font-size: 1.1rem; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;">Custom Subjects</button>

@@ -1,0 +1,18 @@
+# Normalise text to LF in the repository, whatever the checkout platform does.
+* text=auto eol=lf
+
+# Binary assets must never be line-ending converted. Without this, Windows
+# checkouts (core.autocrlf=true) expand LF bytes inside these files to CRLF and
+# corrupt them — the campus map PDF grows by ~200 bytes and stops being valid.
+*.pdf   binary
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.woff  binary
+*.woff2 binary
+
+# Large generated/vendored assets: keep diffs out of the way.
+campus-map.svg  -diff
+panzoom.min.js  -diff linguist-vendored

@@ -1,95 +1,155 @@
 /* ==============================================================
    1. GLOBAL & THEME LOGIC
 ============================================================== */
-window.onload = function() {
-    loadTheme();
-    
+
+// Single entry point. Each page is detected by an element only it has.
+document.addEventListener('DOMContentLoaded', () => {
+    syncThemeToggleLabel();
+    renderCurrentDate();
+    renderProfileBadge();
+    renderGradingScaleTable();
+
     if (document.getElementById('programme-selector')) {
         initDashboardProfile();
     } else if (document.getElementById('course-list')) {
-        initGPACalculator(); 
-    } else if (document.getElementById('attendance-list') || document.getElementById('y2s3-container')) {
-        initAttendanceTracker(); 
-    } else if (document.getElementById('tarumt-map')) {
-        initMap(); 
+        initGPACalculator();
+    } else if (document.getElementById('y2s3-container')) {
+        initAttendanceTracker();
+    } else if (document.getElementById('map-container')) {
+        initMap();
     } else if (document.getElementById('marks-subject')) {
-        initMarksCalculator();
+        initMarksTracker();
+    } else if (document.getElementById('timetable-grid')) {
+        initTimetable();
     }
-};
+});
 
+// The theme is applied to <html> by a tiny inline script in each page's <head>
+// so it lands before first paint. This only handles later toggles.
 function toggleTheme() {
-    const body = document.body;
-    const currentTheme = body.getAttribute('data-theme');
-    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-    body.setAttribute('data-theme', newTheme);
+    const root = document.documentElement;
+    const newTheme = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', newTheme);
     localStorage.setItem('theme', newTheme);
+    syncThemeToggleLabel();
 }
 
-function loadTheme() {
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    document.body.setAttribute('data-theme', savedTheme);
+function syncThemeToggleLabel() {
+    const btn = document.getElementById('theme-toggle');
+    if (!btn) return;
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    btn.textContent = isDark ? '☀️ Light Mode' : '🌙 Dark Mode';
+    btn.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+}
+
+// Escapes user-supplied text before it goes into innerHTML.
+function escapeHtml(value) {
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function renderCurrentDate() {
+    const dateSpan = document.getElementById('current-date');
+    if (!dateSpan) return;
+    const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    dateSpan.textContent = new Date().toLocaleDateString('en-MY', dateOptions);
 }
 
 /* ==============================================================
    MAP.html :D
 ============================================================== */
 
-function initMap() {
-    const mapElement = document.getElementById('tarumt-map');
-    if (!mapElement) return;
+// Blocks SD, SE and SF were never given `-building` ids in the SVG; only their
+// text labels are addressable. Searching them used to silently highlight
+// nothing, so we target the label and style it differently.
+const LABEL_ONLY_TARGETS = new Set(['SD', 'SE', 'SF']);
 
-    const mapContainer = mapElement.parentElement;
+// The map SVG lives in its own file rather than inline in map.html: at ~6 MB
+// it would otherwise block the whole page from painting while it parses.
+async function initMap() {
+    const mapContainer = document.getElementById('map-container');
+    const status = document.getElementById('map-status');
+    if (!mapContainer) return;
 
-    const containerWidth = mapContainer.clientWidth;
-    const containerHeight = mapContainer.clientHeight;
-    
-    const defaultScale = Math.min(1, containerWidth / 1496);
+    const fail = message => {
+        if (!status) return;
+        status.innerHTML = `<span>${escapeHtml(message)}</span>
+            <a href="TARUMT_KL_CAMPUS_MAP.pdf" target="_blank" rel="noopener noreferrer">Open the PDF map instead</a>`;
+    };
 
-    // Center the SVG inside container
-    const startX = (containerWidth - (1496 * defaultScale)) / 2;
-    const startY = (containerHeight - (963 * defaultScale)) / 2;
+    if (typeof panzoom !== 'function') {
+        console.error('panzoom.min.js failed to load; map will not pan or zoom.');
+        fail('Could not load the map controls.');
+        return;
+    }
 
-    
+    let mapElement;
+    try {
+        const response = await fetch('campus-map.svg');
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const parsed = new DOMParser().parseFromString(await response.text(), 'image/svg+xml');
+        if (parsed.querySelector('parsererror')) throw new Error('malformed SVG');
+
+        mapElement = document.importNode(parsed.documentElement, true);
+        mapContainer.insertBefore(mapElement, mapContainer.firstChild);
+        if (status) status.remove();
+    } catch (error) {
+        console.error('Could not load campus-map.svg', error);
+        fail('Could not load the campus map.');
+        return;
+    }
+
+    setupMapInteraction(mapElement, mapContainer);
+}
+
+const MAP_BASE_WIDTH = 1496;
+const MAP_BASE_HEIGHT = 963;
+
+function setupMapInteraction(mapElement, mapContainer) {
+
     const myPanzoom = panzoom(mapElement, {
-        maxZoom: 5,               
-        minZoom: 0.6,     
-        bounds: true,             
-        boundsPadding: 0.1,      
-        smoothScroll: false,      
-        zoomDoubleClickSpeed: 1,     
-             
-        onTouch: function(e) { 
-            return false;         
+        maxZoom: 5,
+        minZoom: 0.6,
+        bounds: true,
+        boundsPadding: 0.1,
+        smoothScroll: false,
+        zoomDoubleClickSpeed: 1,
+
+        onTouch: function(e) {
+            return false;
         }
     });
 
-    // Apply centered default position
-    myPanzoom.zoomAbs(0, 0, defaultScale);
-    myPanzoom.moveTo(startX, startY);
+    // Scale the map down to fit the container and centre it. Used both on load
+    // and by the recenter button, so the two can't drift apart.
+    function fitToContainer() {
+        // A hidden or not-yet-laid-out container reports 0, which would collapse
+        // the map to scale 0 and leave it invisible. Fall back to 1:1.
+        const width = mapContainer.clientWidth || MAP_BASE_WIDTH;
+        const height = mapContainer.clientHeight || MAP_BASE_HEIGHT;
 
-    // =========================================================
-    // NEW: RECENTER BUTTON LOGIC (FULL FACTORY RESET)
-    // =========================================================
+        const scale = Math.min(1, width / MAP_BASE_WIDTH);
+
+        myPanzoom.moveTo(0, 0);
+        myPanzoom.zoomAbs(0, 0, scale);
+        myPanzoom.moveTo(
+            (width - (MAP_BASE_WIDTH * scale)) / 2,
+            (height - (MAP_BASE_HEIGHT * scale)) / 2
+        );
+    }
+
+    fitToContainer();
+
     const recenterBtn = document.getElementById('recenter-map');
     if (recenterBtn) {
         recenterBtn.addEventListener('click', (e) => {
-            e.preventDefault(); 
-            
-            const currentContainerWidth = mapContainer.clientWidth;
-            const currentContainerHeight = mapContainer.clientHeight;
-            
-            const mapBaseWidth = 1496;
-            const mapBaseHeight = 963;
-            
-            const newDefaultScale = Math.min(1, currentContainerWidth / mapBaseWidth);
-            const newStartX = (currentContainerWidth - (mapBaseWidth * newDefaultScale)) / 2;
-            const newStartY = (currentContainerHeight - (mapBaseHeight * newDefaultScale)) / 2;
-
-            // 2. Reset Pan & Zoom
-            myPanzoom.moveTo(0, 0); 
-            myPanzoom.zoomAbs(0, 0, newDefaultScale);
-            myPanzoom.moveTo(newStartX, newStartY);
-
+            e.preventDefault();
+            fitToContainer();
         });
     }
 
@@ -106,8 +166,8 @@ function initMap() {
         "hall": "dtar-building",
         "block t": "dtar-building",
 
-        "se": "block-se-building",
-        
+        "se": "SE",
+
         "clubhouse": "clubhouse-building",
         "club house": "clubhouse-building",
         "heritage kitchen": "clubhouse-building",
@@ -231,9 +291,9 @@ function initMap() {
 
         "sg": "block-sg-building",
 
-        "sf": "block-sf-building",
+        "sf": "SF",
 
-        "sd": "block-sd-building",
+        "sd": "SD",
 
         "sa": "block-sa-building",
         "fafb": "block-sa-building",
@@ -302,124 +362,336 @@ function initMap() {
 
     };
 
+    // Human-readable label for each place, so search can list several matches
+    // by name instead of silently jumping to whichever alias happened to be
+    // first in the object above.
+    const placeNames = {
+        "library-building": "Library / Sunnydae",
+        "citc-building": "CITC / FM Cafe",
+        "dtar-building": "Dewan Tunku Abdul Rahman (Block T)",
+        "SE": "Block SE",
+        "SF": "Block SF",
+        "SD": "Block SD",
+        "clubhouse-building": "Club House / Heritage Kitchen",
+        "block-ua-building": "Sports Complex (Block UA)",
+        "swimming-pool": "Swimming Pool",
+        "taruc-hostel-building": "TARUMT Hostel",
+        "vtar-building": "VTAR Institute",
+        "tarumt-kindergarden": "Taska & Tadika CECE",
+        "redbricks-building": "Red Bricks Cafeteria",
+        "yumyum-building": "Yum Yum Canteen (Block L)",
+        "block-sc-building": "SC Canteen / Casuarina Cafe",
+        "tarumt-arena": "TARUMT Arena (DOS, CPE, CBEIV)",
+        "block-a-building": "Block A (DSA, DAR, DECA, FOAS, FOCS)",
+        "tun-tan-siew-sin-building": "Bangunan Tun Tan Siew Sin (DACE, DISO, DFIN)",
+        "block-k-building": "Block K",
+        "block-sg-building": "Block SG",
+        "block-sa-building": "Block SA (FAFB)",
+        "block-sb-building": "Block SB (CPSR)",
+        "block-s-building": "Block S",
+        "block-z-building": "Block Z / Fern House",
+        "block-y-building": "Block Y",
+        "block-x-building": "Block X",
+        "block-w-building": "Block W",
+        "block-v-building": "Block V",
+        "block-r-building": "Block R",
+        "block-q-building": "Block Q (FSSH, FCCI)",
+        "block-p-building": "Block P",
+        "block-pa-building": "Block PA",
+        "block-n-building": "Block N",
+        "block-m-building": "Block M (FOET, FOBE)",
+        "block-h-building": "Block H",
+        "block-d-building": "Block D",
+        "block-c-building": "Block C",
+        "block-b-building": "Block B",
+        "the-rimba": "The Rimba",
+        "dk-1-building": "DK 1", "dk-2-building": "DK 2", "dk-3-building": "DK 3",
+        "dk-4-building": "DK 4", "dk-5-building": "DK 5", "dk-6-building": "DK 6",
+        "dk-7-building": "DK 7", "dk-8-building": "DK 8",
+        "dk-a-building": "DK A", "dk-b-building": "DK B", "dk-e-building": "DK E",
+        "dk-w-building": "DK W", "dk-x-building": "DK X", "dk-y-building": "DK Y",
+        "dk-z-building": "DK Z",
+        "dk-c-d-building": "DK C / DK D",
+        "dk-aba-abb-building": "DK ABA / ABB",
+        "dk-abc-abd-building": "DK ABC / ABD",
+        "dk-abe-abf-building": "DK ABE / ABF"
+    };
+
+    const nameOf = id => placeNames[id] || id;
+
+    // Ranked, de-duplicated matches: exact alias first, then prefix, then
+    // substring. One result per place, however many aliases it matched.
+    function searchPlaces(query) {
+        const best = new Map();
+
+        for (const [alias, id] of Object.entries(campusDirectory)) {
+            let rank;
+            if (alias === query) rank = 0;
+            else if (alias.startsWith(query)) rank = 1;
+            else if (alias.includes(query)) rank = 2;
+            else continue;
+
+            const current = best.get(id);
+            if (!current || rank < current.rank) best.set(id, { id, rank, alias });
+        }
+
+        return [...best.values()].sort((a, b) =>
+            a.rank - b.rank || nameOf(a.id).localeCompare(nameOf(b.id))
+        );
+    }
+
     // 3. The Search Logic
     const searchInput = document.getElementById('map-search');
-    
+    const resultsList = document.getElementById('map-results');
+
+    function clearHighlights() {
+        document.querySelectorAll('.building-highlight, .label-highlight').forEach(el => {
+            el.classList.remove('building-highlight', 'label-highlight');
+        });
+    }
+
+    function focusPlace(id) {
+        const target = document.getElementById(id);
+        if (!target) return;
+
+        clearHighlights();
+        target.classList.add(LABEL_ONLY_TARGETS.has(id) ? 'label-highlight' : 'building-highlight');
+
+        const bbox = target.getBBox();
+        const svgCenterX = bbox.x + (bbox.width / 2);
+        const svgCenterY = bbox.y + (bbox.height / 2);
+
+        const currentScale = myPanzoom.getTransform().scale;
+
+        // Keep current zoom level, just recentre on the target.
+        myPanzoom.smoothMoveTo(
+            (mapContainer.clientWidth / 2) - (svgCenterX * currentScale),
+            (mapContainer.clientHeight / 2) - (svgCenterY * currentScale)
+        );
+    }
+
+    function renderResults(matches, query) {
+        if (!resultsList) return;
+
+        if (query.length === 0) {
+            resultsList.innerHTML = '';
+            resultsList.hidden = true;
+            return;
+        }
+
+        resultsList.hidden = false;
+
+        if (matches.length === 0) {
+            resultsList.innerHTML = `<li class="map-result-empty">No place matches “${escapeHtml(query)}”.</li>`;
+            return;
+        }
+
+        resultsList.innerHTML = matches.slice(0, 8).map((m, i) => `
+            <li>
+                <button type="button" data-place="${escapeHtml(m.id)}" class="map-result${i === 0 ? ' is-active' : ''}">
+                    ${escapeHtml(nameOf(m.id))}
+                </button>
+            </li>
+        `).join('');
+
+        resultsList.querySelectorAll('[data-place]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                focusPlace(btn.dataset.place);
+                resultsList.querySelectorAll('.map-result').forEach(b => b.classList.remove('is-active'));
+                btn.classList.add('is-active');
+            });
+        });
+    }
+
     searchInput.addEventListener('input', (e) => {
         const query = e.target.value.toLowerCase().trim();
-        
-        // Step A: Remove highlights
-        document.querySelectorAll('.building-highlight').forEach(el => {
-            el.classList.remove('building-highlight');
+
+        clearHighlights();
+
+        if (query.length < 1) {
+            renderResults([], '');
+            return;
+        }
+
+        const matches = searchPlaces(query);
+        renderResults(matches, query);
+
+        // Jump straight to the best match; the list is there to pick another.
+        if (matches.length > 0) focusPlace(matches[0].id);
+    });
+
+    // 4. Emergency layer — assembly points are already in the SVG but were
+    //    never reachable from the UI.
+    const emergencyBtn = document.getElementById('toggle-emergency');
+    if (emergencyBtn) {
+        const points = mapElement.querySelectorAll('[id^="emergency assembly point"]');
+
+        emergencyBtn.addEventListener('click', () => {
+            const showing = mapElement.classList.toggle('show-emergency');
+            points.forEach(p => p.classList.toggle('emergency-pulse', showing));
+            emergencyBtn.setAttribute('aria-pressed', String(showing));
+            emergencyBtn.classList.toggle('is-active', showing);
         });
 
-        if (query.length < 1) return; 
-
-        // Step B: Loop through directory
-        // Step B: Find the matching building
-        let targetSvgId = null;
-
-        // 1. EXACT MATCH PRIORITY: This instantly solves the "s" and "se" bug
-        if (campusDirectory[query]) {
-            targetSvgId = campusDirectory[query];
-        } 
-        // 2. PARTIAL MATCH FALLBACK: This still lets users type "lib" to find the library
-        else {
-            for (const [keyword, svgId] of Object.entries(campusDirectory)) {
-                if (keyword.includes(query)) {
-                    targetSvgId = svgId;
-                    break; // Stop at the first partial match
-                }
-            }
-        }
-
-        // Step C: Highlight and Pan
-        if (targetSvgId) {
-            const targetBuilding = document.getElementById(targetSvgId);
-            
-            if (targetBuilding) {
-
-                targetBuilding.classList.add('building-highlight');
-                
-                // --- Your existing PanZoom math ---
-                const bbox = targetBuilding.getBBox();
-                const svgCenterX = bbox.x + (bbox.width / 2);
-                const svgCenterY = bbox.y + (bbox.height / 2);
-                
-                const currentTransform = myPanzoom.getTransform();
-                const currentScale = currentTransform.scale;
-
-                const mapContainer = mapElement.parentElement;
-                const containerWidth = mapContainer.clientWidth;
-                const containerHeight = mapContainer.clientHeight;
-
-                // Keep current zoom level
-                const moveX = (containerWidth / 2) - (svgCenterX * currentScale);
-                const moveY = (containerHeight / 2) - (svgCenterY * currentScale);
-
-                // Smoothly center only
-                myPanzoom.smoothMoveTo(moveX, moveY);
-            }
-        }
-    });
+        emergencyBtn.title = `Show ${points.length} emergency assembly points`;
+    }
 }
 
 
 /* ==============================================================
    DASHBOARD INLINE PROFILE LOGIC
 ============================================================== */
-let dashboardUniData = null;
+// The semester is whatever curriculum data.js actually ships for the programme,
+// so adding a programme or rolling over a semester needs no code change.
+function semesterFor(programmeKey) {
+    const programme = myDatabase.programmes[programmeKey];
+    return programme ? Object.keys(programme.curriculum)[0] : null;
+}
 
-window.initDashboardProfile = async function() {
-    if (typeof myDatabase !== 'undefined') {
-        dashboardUniData = myDatabase;
-        
-        loadProfile();
+// Always returns a usable profile. A first-time visitor never had a `change`
+// event on the programme dropdown, so without this the tools that require a
+// profile would turn them away with nothing they could do about it.
+window.getProfile = function() {
+    if (typeof myDatabase === 'undefined') return null;
+
+    let profile = null;
+    try {
+        profile = JSON.parse(localStorage.getItem('studentProfile'));
+    } catch (e) {
+        profile = null;
     }
+
+    // Reject anything that no longer matches the current database.
+    if (!profile || !myDatabase.programmes[profile.programme]) {
+        profile = null;
+    }
+
+    if (!profile) {
+        const firstProgramme = Object.keys(myDatabase.programmes)[0];
+        profile = { programme: firstProgramme, semester: semesterFor(firstProgramme) };
+        localStorage.setItem('studentProfile', JSON.stringify(profile));
+    } else if (profile.semester !== semesterFor(profile.programme)) {
+        // data.js moved on; follow it rather than reading a curriculum that is gone.
+        profile.semester = semesterFor(profile.programme);
+        localStorage.setItem('studentProfile', JSON.stringify(profile));
+    }
+
+    return profile;
 };
 
-window.loadProfile = function() {
-    const savedJSON = localStorage.getItem('studentProfile');
-    if (savedJSON) {
-        const profile = JSON.parse(savedJSON);
-        const progSelector = document.getElementById('programme-selector');
-        if (progSelector && profile.programme) {
-            progSelector.value = profile.programme;
-        }
-        updateWelcomeMessage(profile.programme);
-    }
+window.initDashboardProfile = function() {
+    if (typeof myDatabase === 'undefined') return;
+
+    const profile = getProfile();
+    const progSelector = document.getElementById('programme-selector');
+    if (progSelector) progSelector.value = profile.programme;
+
+    updateWelcomeMessage(profile.programme);
+    renderDashboardSummary(profile);
 };
+
+/* At-a-glance figures on the dashboard, read from the same saved state the
+   individual tools use. Tiles for data you haven't entered yet are hidden
+   rather than shown as a meaningless zero. */
+function renderDashboardSummary(profile) {
+    const container = document.getElementById('dashboard-summary');
+    if (!container) return;
+
+    const courses = myDatabase.programmes[profile.programme].curriculum[profile.semester] || [];
+    const tiles = [];
+
+    // Lowest attendance across this semester's subjects.
+    const attendance = loadAttendanceData();
+    let worst = null;
+    courses.forEach(course => {
+        const record = attendance.semester[course.code];
+        if (!record) return;
+
+        const total = (course.weeklyHours || 3) * SEMESTER_WEEKS;
+        if (total === 0) return;
+
+        const pct = ((total - missedHours({ entries: migrateEntries(record) })) / total) * 100;
+        if (!worst || pct < worst.pct) worst = { pct, code: course.code };
+    });
+
+    if (worst) {
+        tiles.push({
+            label: 'Lowest attendance',
+            value: `${worst.pct.toFixed(1)}%`,
+            note: worst.code,
+            colour: worst.pct < ATTENDANCE_THRESHOLD * 100 ? 'var(--danger)' : 'var(--success)'
+        });
+    }
+
+    // Semester GPA from saved grades.
+    const state = loadGPAState();
+    let qp = 0, credits = 0;
+    courses.forEach(course => {
+        const grade = state.grades[course.code];
+        if (grade === undefined) return;
+        qp += parseFloat(grade) * course.credits;
+        credits += course.credits;
+    });
+
+    if (credits > 0) {
+        tiles.push({
+            label: 'Semester GPA',
+            value: (qp / credits).toFixed(4),
+            note: `${credits} of ${courses.reduce((s, c) => s + c.credits, 0)} credits graded`,
+            colour: 'var(--primary)'
+        });
+    }
+
+    // Next class today, if a timetable has been set up.
+    const upcoming = nextClassToday();
+    if (upcoming) {
+        tiles.push({
+            label: 'Next class today',
+            value: upcoming.start,
+            note: `${upcoming.code}${upcoming.venue ? ' · ' + upcoming.venue : ''}`,
+            colour: 'var(--text-main)'
+        });
+    }
+
+    if (tiles.length === 0) {
+        container.innerHTML = '';
+        return;
+    }
+
+    container.innerHTML = tiles.map(t => `
+        <div class="summary-tile">
+            <span class="summary-label">${escapeHtml(t.label)}</span>
+            <strong class="summary-value" style="color: ${t.colour};">${escapeHtml(t.value)}</strong>
+            <span class="summary-note">${escapeHtml(t.note)}</span>
+        </div>
+    `).join('');
+}
 
 window.saveProfile = function() {
     const progSelector = document.getElementById('programme-selector');
-    
-    // If they select the blank default option, do nothing
-    if (!progSelector.value) {
-        return;
-    }
-    
-    // Automatically assign the exact correct semester!
-    const sem = progSelector.value === 'RIS' ? 'Y2S3' : 'Y3S1';
-    
+    if (!progSelector.value || !myDatabase.programmes[progSelector.value]) return;
+
     const profile = {
         programme: progSelector.value,
-        semester: sem
+        semester: semesterFor(progSelector.value)
     };
-    
-    // Save to local storage instantly
     localStorage.setItem('studentProfile', JSON.stringify(profile));
-    
-    // Automatically refresh the page to apply changes to the badge and memory
-    window.location.reload();
+
+    // Re-render in place instead of reloading the page.
+    updateWelcomeMessage(profile.programme);
 };
 
 window.updateWelcomeMessage = function(programmeKey) {
-    const headerTitle = document.querySelector('header h1');
+    const programme = myDatabase.programmes[programmeKey];
+    if (!programme) return;
+
+    const headerTitle = document.querySelector('.welcome-banner h1');
     const headerSub = document.querySelector('header .subtitle');
-    if (headerTitle && dashboardUniData) {
-        headerTitle.textContent = "Welcome back!";
-        // Only displays the Programme Title now
-        headerSub.innerHTML = `<strong>${dashboardUniData.programmes[programmeKey].title}</strong>`;
+    if (headerTitle) headerTitle.textContent = '👋 Welcome back!';
+    if (headerSub) {
+        headerSub.innerHTML =
+            `<strong>${escapeHtml(programme.title)}</strong> • <span id="current-date"></span>`;
+        renderCurrentDate();
     }
 };
 
@@ -428,33 +700,23 @@ window.updateWelcomeMessage = function(programmeKey) {
    GPA / CGPA CALCULATOR LOGIC
 ============================================================== */
 let universityData = null;
-let currentProgramme = "RIS"; 
-let activeSemester = "Y2S3";
-let currentTermQP = 0;      
-let currentTermCredits = 0; 
+let currentProgramme = null;
+let activeSemester = null;
+let currentTermQP = 0;
+let currentTermCredits = 0;
 
-// Run initGPACalculator when the DOM is fully loaded
-document.addEventListener("DOMContentLoaded", () => {
-    if (window.location.pathname.includes('calculator.html')) {
-        initGPACalculator();
-    }
-});
-
-window.initGPACalculator = async function() {
-    const savedProfileJSON = localStorage.getItem('studentProfile');
-    
-    if (savedProfileJSON) {
-        const profile = JSON.parse(savedProfileJSON);
-        currentProgramme = profile.programme;
-        activeSemester = profile.semester; // Auto-pulls Y2S3 or Y3S1
-    }
-
-    if (typeof myDatabase !== 'undefined') {
-        universityData = myDatabase;
-        loadTermSubjects();
-    } else {
+window.initGPACalculator = function() {
+    if (typeof myDatabase === 'undefined') {
         document.getElementById('course-list').innerHTML = "<p style='color: var(--danger);'>Error loading data.js</p>";
+        return;
     }
+
+    const profile = getProfile();
+    currentProgramme = profile.programme;
+    activeSemester = profile.semester;
+
+    universityData = myDatabase;
+    loadTermSubjects();
 }
 
 window.loadTermSubjects = function() {
@@ -487,22 +749,53 @@ window.loadTermSubjects = function() {
                 <div style="font-weight: 600; color: var(--text-main); margin: 4px 0;">${course.name}</div>
                 <div style="font-size: 0.85rem; color: var(--primary); font-weight: bold;">${course.credits} Credits</div>
             </div>
-            <select class="styled-select grade-select" style="width: 130px; cursor: pointer;" data-credits="${course.credits}" onchange="calculateGPA()">
+            <select class="styled-select grade-select" data-code="${escapeHtml(course.code)}" data-credits="${course.credits}" onchange="calculateGPA()" aria-label="Grade for ${escapeHtml(course.name)}">
                 <option value="" selected disabled>Grade</option>
-                <option value="4.00">A (4.00)</option>
-                <option value="3.67">A- (3.67)</option>
-                <option value="3.33">B+ (3.33)</option>
-                <option value="3.00">B (3.00)</option>
-                <option value="2.67">B- (2.67)</option>
-                <option value="2.33">C+ (2.33)</option>
-                <option value="2.00">C (2.00)</option>
-                <option value="0.00">F (0.00)</option>
+                ${gradingScale.map(g =>
+                    `<option value="${g.point.toFixed(2)}">${g.grade} (${g.point.toFixed(2)})</option>`
+                ).join('')}
             </select>
         `;
         courseListContainer.appendChild(row);
     });
 
-    calculateGPA(); 
+    restoreGPAInputs();
+    calculateGPA();
+}
+
+/* Grades used to be lost on every reload. They are saved per subject code so
+   the dashboard can show your current GPA too. */
+function loadGPAState() {
+    try {
+        const stored = JSON.parse(localStorage.getItem('gpaState'));
+        if (stored && typeof stored === 'object') {
+            return { grades: stored.grades || {}, prevCgpa: stored.prevCgpa || '', prevCredits: stored.prevCredits || '' };
+        }
+    } catch (e) { /* fall through to a clean slate */ }
+    return { grades: {}, prevCgpa: '', prevCredits: '' };
+}
+
+function saveGPAState() {
+    const grades = {};
+    document.querySelectorAll('.grade-select').forEach(select => {
+        if (select.value !== '') grades[select.dataset.code] = select.value;
+    });
+
+    localStorage.setItem('gpaState', JSON.stringify({
+        grades,
+        prevCgpa: document.getElementById('prev-cgpa').value,
+        prevCredits: document.getElementById('prev-credits').value
+    }));
+}
+
+function restoreGPAInputs() {
+    const state = loadGPAState();
+    document.querySelectorAll('.grade-select').forEach(select => {
+        const saved = state.grades[select.dataset.code];
+        if (saved !== undefined) select.value = saved;
+    });
+    document.getElementById('prev-cgpa').value = state.prevCgpa;
+    document.getElementById('prev-credits').value = state.prevCredits;
 }
 
 window.calculateGPA = function() {
@@ -525,6 +818,7 @@ window.calculateGPA = function() {
     } else {
         gpaScoreElement.textContent = "0.0000";
     }
+    saveGPAState();
     calculateCGPA();
 }
 
@@ -541,6 +835,7 @@ window.calculateCGPA = function() {
     } else {
         cgpaScoreElement.textContent = "0.0000";
     }
+    saveGPAState();
 }
 
 window.resetAll = function() {
@@ -548,55 +843,87 @@ window.resetAll = function() {
         document.querySelectorAll('.grade-select').forEach(select => select.value = "");
         document.getElementById('prev-cgpa').value = "";
         document.getElementById('prev-credits').value = "";
-        calculateGPA(); 
+        localStorage.removeItem('gpaState');
+        calculateGPA();
     }
 }
 
 /* ==============================================================
    ATTENDANCE TRACKER LOGIC (HOURS-BASED, LOCKED TIMETABLE)
 ============================================================== */
-let attendanceData = JSON.parse(localStorage.getItem('attendanceRecord')) || { semester: {}, custom: [] };
+const SEMESTER_WEEKS = 14;
+const ATTENDANCE_THRESHOLD = 0.8; // must attend at least 80% of timetabled hours
+
+let attendanceData = loadAttendanceData();
 let currentSemesterCourses = [];
 
-// Run initAttendanceTracker when the DOM is fully loaded
-document.addEventListener("DOMContentLoaded", () => {
-     if (window.location.pathname.includes('attendance.html')) {
-         initAttendanceTracker();
-     }
-});
+function loadAttendanceData() {
+    try {
+        const stored = JSON.parse(localStorage.getItem('attendanceRecord'));
+        if (stored && typeof stored === 'object') {
+            return { semester: stored.semester || {}, custom: stored.custom || [] };
+        }
+    } catch (e) {
+        console.warn('Discarding unreadable attendance record', e);
+    }
+    return { semester: {}, custom: [] };
+}
 
-window.initAttendanceTracker = async function() {
+/* Absences are stored as dated entries rather than one running counter, so you
+   can see when you slipped and undo a single mistake. `hoursMissed` from the
+   old format is migrated into one undated entry so nobody loses their count. */
+function migrateEntries(record) {
+    if (!record) return [];
+    if (Array.isArray(record.entries)) return record.entries;
+
+    if (Number.isFinite(record.hoursMissed) && record.hoursMissed > 0) {
+        return [{ date: null, hours: record.hoursMissed }];
+    }
+    return [];
+}
+
+function missedHours(record) {
+    if (!record || !Array.isArray(record.entries)) return 0;
+    return record.entries.reduce((sum, e) => sum + (Number(e.hours) || 0), 0);
+}
+
+function formatEntryDate(date) {
+    if (!date) return 'Earlier this semester';
+    const parsed = new Date(date + 'T00:00:00');
+    if (isNaN(parsed)) return 'Unknown date';
+    return parsed.toLocaleDateString('en-MY', { weekday: 'short', day: 'numeric', month: 'short' });
+}
+
+function todayISO() {
+    const d = new Date();
+    return [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-');
+}
+
+function attendanceRecordFor(type, code, customIndex) {
+    return type === 'semester'
+        ? attendanceData.semester[code]
+        : attendanceData.custom[customIndex];
+}
+
+window.initAttendanceTracker = function() {
     const semContainer = document.getElementById('y2s3-container');
-    if (!semContainer) return;
+    if (!semContainer || typeof myDatabase === 'undefined') return;
 
-    const savedProfileJSON = localStorage.getItem('studentProfile');
-    if (!savedProfileJSON) {
-        alert("Please setup your profile first!");
-        window.location.href = "index.html";
+    const profile = getProfile();
+
+    const tabBtn = document.getElementById('tab-y2s3');
+    if (tabBtn) tabBtn.textContent = `${profile.semester} Subjects`;
+
+    currentSemesterCourses = myDatabase.programmes[profile.programme].curriculum[profile.semester];
+
+    if (!currentSemesterCourses || currentSemesterCourses.length === 0) {
+        semContainer.innerHTML = "<p>No subjects found for this semester.</p>";
+        renderCustomAttendance();
         return;
     }
 
-    const profile = JSON.parse(savedProfileJSON);
-    
-    const tabBtn = document.getElementById('tab-y2s3');
-    const displaySem = profile.semester;
-    if (tabBtn) tabBtn.textContent = `${displaySem} Subjects`;
-
-    try {
-        if (typeof myDatabase !== 'undefined') {
-            currentSemesterCourses = myDatabase.programmes[profile.programme].curriculum[profile.semester];
-            
-            if(currentSemesterCourses) {
-                 renderSemesterAttendance();
-                 renderCustomAttendance();
-            } else {
-                 semContainer.innerHTML = "<p>No subjects found for this semester.</p>";
-            }
-        }
-    } catch (error) {
-        console.error(error);
-        semContainer.innerHTML = "<p>Error loading subjects.</p>";
-    }
+    renderSemesterAttendance();
+    renderCustomAttendance();
 }
 
 window.renderSemesterAttendance = function() {
@@ -604,21 +931,20 @@ window.renderSemesterAttendance = function() {
     container.innerHTML = '';
 
     currentSemesterCourses.forEach(course => {
-        // Automatically pull the exact hours from data.js
-        const defaultHours = course.weeklyHours || 3;
+        const existing = attendanceData.semester[course.code];
 
-        // Force a data structure update if the browser is stuck
-        if (!attendanceData.semester[course.code] || attendanceData.semester[course.code].hoursMissed === undefined) {
-            attendanceData.semester[course.code] = { 
-                weeklyHours: defaultHours, 
-                hoursMissed: 0 
-            };
-        }
-        
+        // data.js is the source of truth for weeklyHours: re-read it on every
+        // render so editing the timetable takes effect for existing users too.
+        // Only the absence entries belong to the student, so those carry over.
+        attendanceData.semester[course.code] = {
+            weeklyHours: course.weeklyHours || 3,
+            entries: migrateEntries(existing)
+        };
+
         const record = attendanceData.semester[course.code];
         container.appendChild(createAttendanceCard(course.code, course.name, record, 'semester'));
     });
-    
+
     // Save the corrected structure immediately
     saveAttendance();
 }
@@ -627,24 +953,30 @@ window.renderCustomAttendance = function() {
     const container = document.getElementById('custom-container');
     container.innerHTML = `
         <div style="margin-bottom: 20px; text-align: right;">
-            <button onclick="addCustomSubject()" class="btn-primary" style="padding: 10px 15px; border-radius: 8px; border: none; background: var(--primary); color: white; font-weight: bold; cursor: pointer;">
+            <button id="add-custom-subject" class="btn-primary" style="width: auto; padding: 10px 15px; border-radius: 8px; margin-top: 0;">
                 + Add Custom Subject
             </button>
         </div>
     `;
+    container.querySelector('#add-custom-subject').addEventListener('click', addCustomSubject);
 
     if (attendanceData.custom.length === 0) {
-        container.innerHTML += `<p style="text-align: center; color: var(--text-muted);">No custom subjects added yet.</p>`;
-    } else {
-        attendanceData.custom.forEach((course, index) => {
-            if (course.weeklyHours === undefined) {
-                course.weeklyHours = 3;
-                course.totalWeeks = 14;
-                course.hoursMissed = course.missed || 0;
-            }
-            container.appendChild(createAttendanceCard(course.code, course.name, course, 'custom', index));
-        });
+        const empty = document.createElement('p');
+        empty.style.cssText = 'text-align: center; color: var(--text-muted);';
+        empty.textContent = 'No custom subjects added yet.';
+        container.appendChild(empty);
+        return;
     }
+
+    attendanceData.custom.forEach((course, index) => {
+        if (course.weeklyHours === undefined) {
+            course.weeklyHours = 3;
+            course.totalWeeks = SEMESTER_WEEKS;
+        }
+        course.entries = migrateEntries(course);
+        delete course.hoursMissed;
+        container.appendChild(createAttendanceCard(course.code, course.name, course, 'custom', index));
+    });
 }
 
 window.createAttendanceCard = function(code, name, record, type, customIndex = null) {
@@ -653,17 +985,18 @@ window.createAttendanceCard = function(code, name, record, type, customIndex = n
     card.style.marginBottom = '20px';
 
     // Core Math: Strictly uses your timetable data
-    const totalWeeksForMath = type === 'custom' ? (record.totalWeeks || 14) : 14;
+    const totalWeeksForMath = type === 'custom' ? (record.totalWeeks || SEMESTER_WEEKS) : SEMESTER_WEEKS;
     const totalHoursForSemester = record.weeklyHours * totalWeeksForMath;
-    const attendedHours = totalHoursForSemester - record.hoursMissed;
+    const hoursMissed = missedHours(record);
+    const attendedHours = totalHoursForSemester - hoursMissed;
     const percentage = totalHoursForSemester === 0 ? 100 : ((attendedHours / totalHoursForSemester) * 100).toFixed(1);
-    
-    const isDanger = percentage < 80;
+
+    const isDanger = percentage < ATTENDANCE_THRESHOLD * 100;
     const statusColor = isDanger ? 'var(--danger)' : 'var(--success)';
 
     // Math for Safe Skips (20% rule)
-    const maxMissesAllowed = Math.floor(totalHoursForSemester * 0.2);
-    const safeHoursLeft = maxMissesAllowed - record.hoursMissed;
+    const maxMissesAllowed = Math.floor(totalHoursForSemester * (1 - ATTENDANCE_THRESHOLD));
+    const safeHoursLeft = maxMissesAllowed - hoursMissed;
 
     let skipMessage = "";
     if (safeHoursLeft > 0) {
@@ -678,8 +1011,8 @@ window.createAttendanceCard = function(code, name, record, type, customIndex = n
     card.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border); padding-bottom: 15px; margin-bottom: 15px;">
             <div>
-                <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: bold;">${code}</span>
-                <h3 style="margin: 5px 0 0 0; color: var(--text-main); font-size: 1.1rem;">${name}</h3>
+                <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: bold;">${escapeHtml(code)}</span>
+                <h3 style="margin: 5px 0 0 0; color: var(--text-main); font-size: 1.1rem;">${escapeHtml(name)}</h3>
             </div>
             <div style="text-align: right;">
                 <h2 style="margin: 0; color: ${statusColor}; font-size: 1.8rem;">${percentage}%</h2>
@@ -692,42 +1025,87 @@ window.createAttendanceCard = function(code, name, record, type, customIndex = n
                 <div style="font-size: 0.75rem; color: var(--text-muted);">(e.g. +2 for skipping a 2hr lecture)</div>
             </div>
             <div style="display: flex; align-items: center; gap: 15px;">
-                <button onclick="updateAttendance('${code}', '${type}', 'hoursMissed', -1, ${customIndex})" style="width: 35px; height: 35px; border-radius: 50%; border: 1px solid var(--danger); background: var(--input-bg); color: var(--danger); cursor: pointer; font-size: 1.2rem; font-weight: bold;">-</button>
-                <span style="font-size: 1.5rem; font-weight: bold; color: var(--danger); width: 30px; text-align: center;">${record.hoursMissed}</span>
-                <button onclick="updateAttendance('${code}', '${type}', 'hoursMissed', 1, ${customIndex})" style="width: 35px; height: 35px; border-radius: 50%; border: none; background: var(--danger); color: white; cursor: pointer; font-size: 1.2rem; font-weight: bold;">+</button>
+                <button data-step="-1" aria-label="Remove one missed hour from ${escapeHtml(name)}" style="width: 35px; height: 35px; border-radius: 50%; border: 1px solid var(--danger); background: var(--input-bg); color: var(--danger); cursor: pointer; font-size: 1.2rem; font-weight: bold;">-</button>
+                <span style="font-size: 1.5rem; font-weight: bold; color: var(--danger); width: 30px; text-align: center;">${hoursMissed}</span>
+                <button data-step="1" aria-label="Add one missed hour to ${escapeHtml(name)}" style="width: 35px; height: 35px; border-radius: 50%; border: none; background: var(--danger); color: white; cursor: pointer; font-size: 1.2rem; font-weight: bold;">+</button>
             </div>
         </div>
 
         <div style="background: var(--bg-color); padding: 12px; border-radius: 8px; font-size: 0.9rem; color: var(--text-muted); text-align: center;">
             ${skipMessage}
         </div>
-        
-        ${type === 'custom' ? `<button onclick="deleteCustomSubject(${customIndex})" class="btn-delete" style="width: 100%; margin-top: 15px; padding: 10px; border-radius: 8px;">Remove Subject</button>` : ''}
+
+        ${record.entries.length > 0 ? `
+        <details class="attendance-history">
+            <summary>${record.entries.length} absence${record.entries.length !== 1 ? 's' : ''} logged</summary>
+            <ul>
+                ${record.entries.map((entry, i) => `
+                    <li>
+                        <span>${escapeHtml(formatEntryDate(entry.date))}</span>
+                        <span class="history-hours">${entry.hours}h</span>
+                        <button type="button" data-entry="${i}" class="btn-delete tt-mini" aria-label="Undo this absence">Undo</button>
+                    </li>
+                `).join('')}
+            </ul>
+        </details>` : ''}
+
+        ${type === 'custom' ? `<button data-remove="1" class="btn-delete" style="width: 100%; margin-top: 15px; padding: 10px; border-radius: 8px;">Remove Subject</button>` : ''}
     `;
+
+    // Wired as listeners, not inline onclick strings: a subject code or name
+    // containing a quote used to break out of the attribute and kill the card.
+    card.querySelectorAll('[data-step]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            updateAttendance(type, code, Number(btn.dataset.step), customIndex);
+        });
+    });
+
+    card.querySelectorAll('[data-entry]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            undoAbsence(type, code, Number(btn.dataset.entry), customIndex);
+        });
+    });
+
+    const removeBtn = card.querySelector('[data-remove]');
+    if (removeBtn) {
+        removeBtn.addEventListener('click', () => deleteCustomSubject(customIndex));
+    }
 
     return card;
 }
 
-window.updateAttendance = function(code, type, field, change, customIndex) {
-    let targetRecord;
-    
-    if (type === 'semester') {
-        targetRecord = attendanceData.semester[code];
+window.updateAttendance = function(type, code, change, customIndex) {
+    const record = attendanceRecordFor(type, code, customIndex);
+    if (!record) return;
+
+    const totalWeeks = type === 'custom' ? (record.totalWeeks || SEMESTER_WEEKS) : SEMESTER_WEEKS;
+    const maxHours = record.weeklyHours * totalWeeks;
+
+    if (change > 0) {
+        if (missedHours(record) + change > maxHours) return;
+        record.entries.push({ date: todayISO(), hours: change });
     } else {
-        targetRecord = attendanceData.custom[customIndex];
+        // Take the hour back off the most recent absence, dropping the entry
+        // entirely once it reaches zero.
+        const last = record.entries[record.entries.length - 1];
+        if (!last) return;
+        last.hours += change;
+        if (last.hours <= 0) record.entries.pop();
     }
 
-    targetRecord[field] += change;
-
-    // Safety Checks
-    if (targetRecord.hoursMissed < 0) targetRecord.hoursMissed = 0;
-    
-    const totalWeeksForMath = type === 'custom' ? (targetRecord.totalWeeks || 14) : 14;
-    const maxHours = targetRecord.weeklyHours * totalWeeksForMath;
-    if (targetRecord.hoursMissed > maxHours) targetRecord.hoursMissed = maxHours;
-
     saveAttendance();
-    
+
+    if (type === 'semester') renderSemesterAttendance();
+    else renderCustomAttendance();
+}
+
+window.undoAbsence = function(type, code, entryIndex, customIndex) {
+    const record = attendanceRecordFor(type, code, customIndex);
+    if (!record || !record.entries[entryIndex]) return;
+
+    record.entries.splice(entryIndex, 1);
+    saveAttendance();
+
     if (type === 'semester') renderSemesterAttendance();
     else renderCustomAttendance();
 }
@@ -756,9 +1134,9 @@ window.addCustomSubject = function() {
         lecture: lec,
         tutorial: tut,
         practical: prac,
-        weeklyHours: totalWeekly, 
-        totalWeeks: weeks, 
-        hoursMissed: 0 
+        weeklyHours: totalWeekly,
+        totalWeeks: weeks,
+        entries: []
     });
     
     saveAttendance();
@@ -780,9 +1158,9 @@ window.saveAttendance = function() {
 window.resetAttendance = function() {
     if(confirm("🚨 WARNING: This will reset ALL your missed hours back to 0. Are you sure?")) {
         for (let key in attendanceData.semester) {
-            attendanceData.semester[key].hoursMissed = 0;
+            attendanceData.semester[key].entries = [];
         }
-        attendanceData.custom.forEach(course => course.hoursMissed = 0);
+        attendanceData.custom.forEach(course => course.entries = []);
         
         saveAttendance();
         renderSemesterAttendance();
@@ -820,67 +1198,92 @@ window.switchTab = function(tabName) {
    ADVANCED TARGET MARKS CALCULATOR LOGIC (AUTO-RATIO & FULL GRADES)
 ============================================================== */
 
-const targetMarksData = {
-    // IT Subjects (RIS)
-    "BMCS2003": { final: 30, cw: [{id: "c1", name: "Test", w: 28}, {id: "c2", name: "Assignment", w: 42}] },
-    "BMIT2023": { final: 30, cw: [{id: "c1", name: "Test", w: 14}, {id: "c2", name: "Assignment", w: 56}] },
-    "BMIT2083": { final: 50, cw: [{id: "c1", name: "Assignment", w: 25}, {id: "c2", name: "Written Test", w: 20}, {id: "c3", name: "Quiz", w: 5}] },
-    "BMIT3173": { final: 30, cw: [{id: "c1", name: "Quiz", w: 7}, {id: "c2", name: "Assignment", w: 63}] },
-    "MPU-3133": { final: 0,  cw: [{id: "c1", name: "Tugasan Bertulis", w: 30}, {id: "c2", name: "Pembentangan", w: 30}, {id: "c3", name: "Ujian", w: 40}] },
-    "MPU-34E2": { final: 0,  cw: [{id: "c1", name: "Continuous Assessment", w: 100}] },
-    
-    // Finance Subjects (RFI)
-    "BBMF3033": { final: 50, cw: [{id: "c1", name: "Assignment", w: 35}, {id: "c2", name: "Test", w: 15}] },
-    "BBMF3023": { final: 50, cw: [{id: "c1", name: "Assignment", w: 20}, {id: "c2", name: "Individual Test", w: 30}] },
-    "BBMF3173": { final: 50, cw: [{id: "c1", name: "Test", w: 20}, {id: "c2", name: "Assignment", w: 30}] },
-    "BBBD3023": { final: 50, cw: [{id: "c1", name: "Test", w: 25}, {id: "c2", name: "Group Assignment", w: 25}] },
-    "BBMF3304": { final: 50, cw: [{id: "c1", name: "Individual Test", w: 20}, {id: "c2", name: "Assignment", w: 30}] },
-    "MPU-3202": { final: 0,  cw: [{id: "c1", name: "Proposal Writing", w: 30}, {id: "c2", name: "Project Presentation", w: 40}, {id: "c3", name: "Reflective Essay", w: 30}] },
-    "MPU-34Q2": { final: 0,  cw: [{id: "c1", name: "Continuous Assessment", w: 100}] }
-};
+// Assessment breakdowns now live alongside the courses in data.js. This is a
+// flat code -> course lookup over every programme, built on first use.
+let courseIndex = null;
 
-const gradingScale = [
-    { grade: 'A', min: 80, color: 'var(--text-main)' },
-    { grade: 'A-', min: 75, color: 'var(--text-main)' },
-    { grade: 'B+', min: 70, color: 'var(--text-main)' },
-    { grade: 'B', min: 65, color: 'var(--text-main)' },
-    { grade: 'B-', min: 60, color: 'var(--text-main)' },
-    { grade: 'C+', min: 55, color: 'var(--text-main)' },
-    { grade: 'C', min: 50, color: 'var(--text-main)' }
-];
+function getCourse(code) {
+    if (typeof myDatabase === 'undefined') return null;
 
-document.addEventListener("DOMContentLoaded", () => {
-    if (window.location.pathname.includes('marks.html')) {
-        initMarksTracker();
-    }
-});
-
-window.initMarksTracker = async function() {
-    const profileJSON = localStorage.getItem('studentProfile');
-    if (!profileJSON || typeof myDatabase === 'undefined') return;
-
-    const profile = JSON.parse(profileJSON);
-    const courses = myDatabase.programmes[profile.programme].curriculum[profile.semester];
-    const subjectSelect = document.getElementById('marks-subject');
-    
-    if (subjectSelect && courses) {
-        subjectSelect.innerHTML = '<option value="">-- Choose Subject --</option>';
-        
-        // List of subject codes to hide from the Target Marks calculator
-        const hiddenSubjects = ["MPU-34E2", "MPU-34Q2"]; 
-
-        courses.forEach(course => {
-            // If the course is Gym or Pickleball, skip it!
-            if (hiddenSubjects.includes(course.code.toUpperCase())) {
-                return; 
-            }
-
-            const option = document.createElement('option');
-            option.value = course.code.toUpperCase();
-            option.textContent = `${course.code}  ${course.name}`;
-            subjectSelect.appendChild(option);
+    if (!courseIndex) {
+        courseIndex = {};
+        Object.values(myDatabase.programmes).forEach(programme => {
+            Object.values(programme.curriculum).forEach(courses => {
+                courses.forEach(course => {
+                    courseIndex[course.code.toUpperCase()] = course;
+                    validateAssessment(course);
+                });
+            });
         });
     }
+
+    return courseIndex[String(code).toUpperCase()] || null;
+}
+
+function getAssessment(code) {
+    const course = getCourse(code);
+    return course ? course.assessment : null;
+}
+
+// Catches a mistyped weight in data.js immediately instead of silently
+// producing targets that can never add up to 100%.
+function validateAssessment(course) {
+    const a = course.assessment;
+    if (!a) {
+        console.warn(`${course.code}: no assessment breakdown defined`);
+        return;
+    }
+    const total = a.final + a.components.reduce((sum, c) => sum + c.weight, 0);
+    if (Math.abs(total - 100) > 0.01) {
+        console.warn(`${course.code}: assessment weights total ${total}%, expected 100%`);
+    }
+}
+
+// Passing grades only — "what do I need for an F" is not a useful target.
+const passingGrades = () => gradingScale.filter(g => g.point > 0);
+
+// Renders the grading-scale reference table shared by marks.html and
+// calculator.html, so the two can never drift from data.js or each other.
+function renderGradingScaleTable() {
+    document.querySelectorAll('[data-grading-scale]').forEach(table => {
+        table.innerHTML = `
+            <thead>
+                <tr><th>Grade</th><th>Marks (%)</th><th>Grade Point</th></tr>
+            </thead>
+            <tbody>
+                ${gradingScale.map(g => {
+                    const colour = g.point === 0 ? 'var(--danger)' : 'var(--text-main)';
+                    return `<tr>
+                        <td><strong style="color: ${colour};">${g.grade}</strong></td>
+                        <td>${g.min} - ${g.max}</td>
+                        <td>${g.point.toFixed(2)}</td>
+                    </tr>`;
+                }).join('')}
+            </tbody>
+        `;
+    });
+}
+
+window.initMarksTracker = function() {
+    if (typeof myDatabase === 'undefined') return;
+
+    const profile = getProfile();
+    const courses = myDatabase.programmes[profile.programme].curriculum[profile.semester];
+    const subjectSelect = document.getElementById('marks-subject');
+    if (!subjectSelect || !courses) return;
+
+    subjectSelect.innerHTML = '<option value="">-- Choose Subject --</option>';
+
+    courses.forEach(course => {
+        // Subjects flagged targetMarks: false in data.js (Gym, Pickleball) and
+        // anything lacking a breakdown are skipped rather than crashing later.
+        if (course.targetMarks === false || !course.assessment) return;
+
+        const option = document.createElement('option');
+        option.value = course.code.toUpperCase();
+        option.textContent = `${course.code}  ${course.name}`;
+        subjectSelect.appendChild(option);
+    });
 }
 
 window.renderInterface = function() {
@@ -896,11 +1299,16 @@ window.renderInterface = function() {
         return;
     }
 
-    const data = targetMarksData[subjCode];
-    
+    const data = getAssessment(subjCode);
+    if (!data) {
+        inputContainer.innerHTML = '';
+        resultSection.style.display = 'none';
+        return;
+    }
+
     // Safety check for 100% Coursework Subjects
     if (data.final === 0) {
-        modeSelect.value = 'mode-reverse'; 
+        modeSelect.value = 'mode-reverse';
         modeSelect.options[0].disabled = true; // Disable "predict final exam"
         mode = 'mode-reverse';
     } else {
@@ -911,13 +1319,13 @@ window.renderInterface = function() {
 
     if (mode === 'mode-final') {
         html += `<h4 style="margin: 0 0 15px 0; color: var(--primary);">Enter Known Coursework Scores</h4>`;
-        data.cw.forEach(comp => { html += createRatioInput(comp.id, comp.name, comp.w); });
+        data.components.forEach(comp => { html += createRatioInput(comp.id, comp.name, comp.weight); });
     } else if (mode === 'mode-reverse') {
         html += `
             <div style="margin-bottom: 20px;">
                 <label style="font-weight: bold; color: var(--primary); display: block; margin-bottom: 8px;">Find missing score for:</label>
                 <select id="find-target" class="styled-select" onchange="renderInterfaceReverseInputs()">
-                    ${data.cw.map(c => `<option value="${c.id}">${c.name} (Worth ${c.w}%)</option>`).join('')}
+                    ${data.components.map(c => `<option value="${c.id}">${escapeHtml(c.name)} (Worth ${c.weight}%)</option>`).join('')}
                     ${data.final > 0 ? `<option value="final">Final Exam (Worth ${data.final}%)</option>` : ''}
                 </select>
             </div>
@@ -932,16 +1340,50 @@ window.renderInterface = function() {
     else calculateDynamic();
 }
 
+/* Scores you have already typed, kept per subject + component so the page
+   isn't blank every time you come back to it. */
+function loadMarksScores() {
+    try {
+        const stored = JSON.parse(localStorage.getItem('marksScores'));
+        if (stored && typeof stored === 'object') return stored;
+    } catch (e) { /* fall through */ }
+    return {};
+}
+
+window.saveMarksScores = function() {
+    const subjCode = document.getElementById('marks-subject').value;
+    if (!subjCode) return;
+
+    const all = loadMarksScores();
+    const forSubject = {};
+
+    document.querySelectorAll('[data-component]').forEach(input => {
+        const comp = input.dataset.component;
+        const field = input.dataset.field;
+        if (input.value === '') return;
+        forSubject[comp] = forSubject[comp] || {};
+        forSubject[comp][field] = input.value;
+    });
+
+    all[subjCode] = forSubject;
+    localStorage.setItem('marksScores', JSON.stringify(all));
+};
+
 window.createRatioInput = function(id, name, weight) {
+    const subjCode = document.getElementById('marks-subject').value;
+    const saved = (loadMarksScores()[subjCode] || {})[id] || {};
+    const score = saved.score !== undefined ? escapeHtml(saved.score) : '';
+    const outof = saved.outof !== undefined ? escapeHtml(saved.outof) : weight;
+
     return `
         <div style="margin-bottom: 15px; background: var(--bg-color); padding: 15px; border-radius: 8px; border: 1px solid var(--border);">
-            <label style="font-size: 0.95rem; font-weight: bold; color: var(--text-main); display: block; margin-bottom: 10px;">
-                ${name} <span style="color: var(--primary); font-size: 0.8rem; font-weight: normal; margin-left: 5px;">(Worth ${weight}% of total grade)</span>
+            <label for="score-${id}" style="font-size: 0.95rem; font-weight: bold; color: var(--text-main); display: block; margin-bottom: 10px;">
+                ${escapeHtml(name)} <span style="color: var(--primary); font-size: 0.8rem; font-weight: normal; margin-left: 5px;">(Worth ${weight}% of total grade)</span>
             </label>
             <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center;">
-                <input type="number" id="score-${id}" placeholder="Your Score" oninput="calculateDynamic()" class="styled-select" style="text-align: center;">
+                <input type="number" id="score-${id}" value="${score}" data-component="${id}" data-field="score" placeholder="Your Score" oninput="calculateDynamic()" class="styled-select" style="text-align: center;" aria-label="${escapeHtml(name)} score">
                 <span style="color: var(--text-muted); font-weight: bold;">/</span>
-                <input type="number" id="outof-${id}" value="${weight}" placeholder="Max" oninput="calculateDynamic()" class="styled-select" style="text-align: center;">
+                <input type="number" id="outof-${id}" value="${outof}" data-component="${id}" data-field="outof" placeholder="Max" oninput="calculateDynamic()" class="styled-select" style="text-align: center;" aria-label="${escapeHtml(name)} maximum">
             </div>
         </div>
     `;
@@ -949,19 +1391,19 @@ window.createRatioInput = function(id, name, weight) {
 
 window.renderInterfaceReverseInputs = function() {
     const subjCode = document.getElementById('marks-subject').value;
-    const data = targetMarksData[subjCode];
+    const data = getAssessment(subjCode);
     const findTargetId = document.getElementById('find-target').value;
     const container = document.getElementById('reverse-inputs');
 
     let html = `<h4 style="margin: 0 0 15px 0; color: var(--primary);">Enter Known Scores</h4>`;
-    
+
     if (findTargetId !== 'final' && data.final > 0) {
         html += createRatioInput('final', 'Final Exam', data.final);
     }
 
-    data.cw.forEach(comp => {
+    data.components.forEach(comp => {
         if (comp.id !== findTargetId) {
-            html += createRatioInput(comp.id, comp.name, comp.w);
+            html += createRatioInput(comp.id, comp.name, comp.weight);
         }
     });
 
@@ -972,8 +1414,11 @@ window.renderInterfaceReverseInputs = function() {
 window.calculateDynamic = function() {
     const subjCode = document.getElementById('marks-subject').value;
     const mode = document.getElementById('calc-mode').value;
-    const data = targetMarksData[subjCode];
+    const data = getAssessment(subjCode);
     const resultContainer = document.getElementById('dynamic-result-container');
+    if (!data) return;
+
+    saveMarksScores();
 
     let currentTotalWeightage = 0;
     let isMissingInputs = false;
@@ -983,22 +1428,22 @@ window.calculateDynamic = function() {
     if (mode === 'mode-final') {
         targetComponentWeight = data.final;
         targetComponentName = "Final Exam";
-        
-        data.cw.forEach(comp => {
+
+        data.components.forEach(comp => {
             const score = parseFloat(document.getElementById(`score-${comp.id}`).value);
             const outof = parseFloat(document.getElementById(`outof-${comp.id}`).value);
             if (isNaN(score) || isNaN(outof) || outof === 0) isMissingInputs = true;
-            else currentTotalWeightage += (score / outof) * comp.w;
+            else currentTotalWeightage += (score / outof) * comp.weight;
         });
     } else if (mode === 'mode-reverse') {
         const findTargetId = document.getElementById('find-target').value;
-        
+
         if (findTargetId === 'final') {
             targetComponentWeight = data.final;
             targetComponentName = "Final Exam";
         } else {
-            const targetComp = data.cw.find(c => c.id === findTargetId);
-            targetComponentWeight = targetComp.w;
+            const targetComp = data.components.find(c => c.id === findTargetId);
+            targetComponentWeight = targetComp.weight;
             targetComponentName = targetComp.name;
         }
 
@@ -1009,12 +1454,12 @@ window.calculateDynamic = function() {
             else currentTotalWeightage += (finalScore / finalOutof) * data.final;
         }
 
-        data.cw.forEach(comp => {
+        data.components.forEach(comp => {
             if (comp.id !== findTargetId) {
                 const score = parseFloat(document.getElementById(`score-${comp.id}`).value);
                 const outof = parseFloat(document.getElementById(`outof-${comp.id}`).value);
                 if (isNaN(score) || isNaN(outof) || outof === 0) isMissingInputs = true;
-                else currentTotalWeightage += (score / outof) * comp.w;
+                else currentTotalWeightage += (score / outof) * comp.weight;
             }
         });
     }
@@ -1033,7 +1478,7 @@ window.calculateDynamic = function() {
             </div>
     `;
 
-    gradingScale.forEach(grade => {
+    passingGrades().forEach(grade => {
         const marksNeededToHitGrade = grade.min - currentTotalWeightage;
         const percentageNeededOnPaper = (marksNeededToHitGrade / targetComponentWeight) * 100;
         
@@ -1053,7 +1498,7 @@ window.calculateDynamic = function() {
 
         tableHtml += `
             <div style="display: flex; justify-content: space-between; padding: 12px 15px; border-bottom: 1px solid var(--border);">
-                <span style="font-weight: bold; color: ${grade.color}; font-size: 1.1rem;">${grade.grade} <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: normal;">(> ${grade.min})</span></span>
+                <span style="font-weight: bold; color: var(--text-main); font-size: 1.1rem;">${grade.grade} <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: normal;">(&ge; ${grade.min})</span></span>
                 <span style="font-weight: bold; color: ${rowColor}; font-size: 1.1rem;">${displayScore}</span>
             </div>
         `;
@@ -1076,69 +1521,308 @@ if ('serviceWorker' in navigator) {
 }
 
 
-document.addEventListener('DOMContentLoaded', () => {
-    // 1. Fill in the Current Date
-    const dateSpan = document.getElementById('current-date');
-    if (dateSpan) {
-        // Formats the date nicely (e.g., "Monday, October 14, 2024")
-        const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        dateSpan.textContent = new Date().toLocaleDateString('en-MY', dateOptions);
+/* ==============================================================
+   TIMETABLE
+   --------------------------------------------------------------
+   Class times are personal (they vary by tutorial group), so unlike
+   the curriculum they live in localStorage rather than data.js.
+   Stored as: { id, code, type, day, start, end, venue }
+   `day` follows Date.getDay(): 0 = Sunday ... 6 = Saturday.
+============================================================== */
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+// Teaching week order — Monday first, Sunday last.
+const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
+
+function loadTimetable() {
+    try {
+        const stored = JSON.parse(localStorage.getItem('timetable'));
+        if (Array.isArray(stored)) return stored;
+    } catch (e) { /* fall through */ }
+    return [];
+}
+
+function saveTimetable(entries) {
+    localStorage.setItem('timetable', JSON.stringify(entries));
+}
+
+function minutesOf(time) {
+    const [h, m] = String(time).split(':').map(Number);
+    return (h * 60) + (m || 0);
+}
+
+function formatTime(time) {
+    const [h, m] = String(time).split(':').map(Number);
+    const suffix = h < 12 ? 'am' : 'pm';
+    const hour12 = h % 12 === 0 ? 12 : h % 12;
+    return `${hour12}:${String(m || 0).padStart(2, '0')}${suffix}`;
+}
+
+// Duration in hours, used when marking a class as missed.
+function durationHours(entry) {
+    return Math.max(0, (minutesOf(entry.end) - minutesOf(entry.start)) / 60);
+}
+
+function nextClassToday() {
+    const now = new Date();
+    const nowMinutes = (now.getHours() * 60) + now.getMinutes();
+
+    return loadTimetable()
+        .filter(e => e.day === now.getDay() && minutesOf(e.start) >= nowMinutes)
+        .sort((a, b) => minutesOf(a.start) - minutesOf(b.start))
+        .map(e => ({ ...e, start: formatTime(e.start) }))[0] || null;
+}
+
+window.initTimetable = function() {
+    if (typeof myDatabase === 'undefined') return;
+
+    const profile = getProfile();
+    const courses = myDatabase.programmes[profile.programme].curriculum[profile.semester] || [];
+
+    const subjectSelect = document.getElementById('tt-subject');
+    subjectSelect.innerHTML = courses
+        .map(c => `<option value="${escapeHtml(c.code)}">${escapeHtml(c.code)} — ${escapeHtml(c.name)}</option>`)
+        .join('');
+
+    const daySelect = document.getElementById('tt-day');
+    daySelect.innerHTML = DAY_ORDER
+        .map(d => `<option value="${d}">${DAY_NAMES[d]}</option>`)
+        .join('');
+
+    document.getElementById('tt-form').addEventListener('submit', addTimetableEntry);
+    renderTimetable();
+};
+
+function addTimetableEntry(event) {
+    event.preventDefault();
+
+    const start = document.getElementById('tt-start').value;
+    const end = document.getElementById('tt-end').value;
+    const status = document.getElementById('tt-status');
+
+    if (minutesOf(end) <= minutesOf(start)) {
+        status.textContent = 'End time must be after the start time.';
+        status.style.color = 'var(--danger)';
+        return;
     }
 
-    // 2. Load the Profile Data
-    const savedProfileJSON = localStorage.getItem('studentProfile');
-    const profileInfoSpan = document.getElementById('profile-info');
-    const welcomeHeading = document.querySelector('.welcome-banner h1');
+    const entries = loadTimetable();
+    entries.push({
+        id: `tt-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        code: document.getElementById('tt-subject').value,
+        type: document.getElementById('tt-type').value,
+        day: Number(document.getElementById('tt-day').value),
+        start,
+        end,
+        venue: document.getElementById('tt-venue').value.trim()
+    });
 
-    if (savedProfileJSON) {
-        // Parse the saved data
-        const profile = JSON.parse(savedProfileJSON);
-        
-        // Format the text
-        const programmeName = profile.programme === 'RIS' ? 'Information Security' : 'Finance & Investment';
-        const year = profile.semester.substring(1, 2);
-        const sem = profile.semester.substring(3, 4);
+    saveTimetable(entries);
+    status.textContent = 'Class added.';
+    status.style.color = 'var(--success)';
+    document.getElementById('tt-venue').value = '';
+    renderTimetable();
+}
 
-        // Update the UI
-        if (welcomeHeading) welcomeHeading.textContent = "👋 Welcome back!";
-        if (profileInfoSpan) {
-            profileInfoSpan.textContent = `${programmeName} (Year ${year}, Semester ${sem})`;
-        }
-    } else {
-        // If no profile is found, prompt them to set it up
-        if (profileInfoSpan) {
-            profileInfoSpan.innerHTML = `<a href="profile.html" style="color: inherit; text-decoration: underline;">Click here to setup your profile</a>`;
-        }
+window.deleteTimetableEntry = function(id) {
+    const entries = loadTimetable().filter(e => e.id !== id);
+    saveTimetable(entries);
+    renderTimetable();
+};
+
+// Records the class's full duration against the attendance tracker, so you
+// don't have to work out "how many hours was that lecture" by hand.
+window.markClassMissed = function(id) {
+    const entry = loadTimetable().find(e => e.id === id);
+    if (!entry) return;
+
+    const hours = durationHours(entry);
+    if (!confirm(`Add ${hours} hour${hours !== 1 ? 's' : ''} of missed class to ${entry.code}?`)) return;
+
+    const data = loadAttendanceData();
+    const record = data.semester[entry.code];
+    if (!record) {
+        alert(`${entry.code} has no attendance record yet. Open the Attendance Tracker once first.`);
+        return;
     }
-});
 
+    record.entries = migrateEntries(record);
+    delete record.hoursMissed;
+
+    const max = record.weeklyHours * SEMESTER_WEEKS;
+    if (missedHours(record) + hours > max) {
+        alert(`That would exceed the total timetabled hours for ${entry.code}.`);
+        return;
+    }
+
+    record.entries.push({ date: todayISO(), hours });
+    localStorage.setItem('attendanceRecord', JSON.stringify(data));
+
+    const status = document.getElementById('tt-status');
+    status.textContent = `Recorded ${hours}h missed for ${entry.code}.`;
+    status.style.color = 'var(--text-main)';
+};
+
+function renderTimetable() {
+    const container = document.getElementById('timetable-grid');
+    if (!container) return;
+
+    const entries = loadTimetable();
+
+    if (entries.length === 0) {
+        container.innerHTML = `<p style="text-align: center; color: var(--text-muted); padding: 30px 0;">
+            No classes added yet. Use the form above to build your weekly schedule.</p>`;
+        return;
+    }
+
+    const today = new Date().getDay();
+
+    container.innerHTML = DAY_ORDER.map(day => {
+        const forDay = entries
+            .filter(e => e.day === day)
+            .sort((a, b) => minutesOf(a.start) - minutesOf(b.start));
+
+        if (forDay.length === 0) return '';
+
+        return `
+            <div class="tt-day ${day === today ? 'tt-today' : ''}">
+                <h3>${DAY_NAMES[day]}${day === today ? ' <span class="tt-badge">Today</span>' : ''}</h3>
+                ${forDay.map(e => `
+                    <div class="tt-entry">
+                        <div class="tt-time">
+                            <strong>${formatTime(e.start)}</strong>
+                            <span>${formatTime(e.end)}</span>
+                        </div>
+                        <div class="tt-detail">
+                            <strong>${escapeHtml(e.code)}</strong>
+                            <span>${escapeHtml(e.type)}${e.venue ? ' · ' + escapeHtml(e.venue) : ''}</span>
+                        </div>
+                        <div class="tt-actions">
+                            <button type="button" class="btn-delete tt-mini" onclick="markClassMissed('${e.id}')" title="Record this class as missed">Missed</button>
+                            <button type="button" class="btn-delete tt-mini" onclick="deleteTimetableEntry('${e.id}')" aria-label="Remove class">✕</button>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }).join('');
+}
+
+/* ==============================================================
+   BACKUP & RESTORE
+   --------------------------------------------------------------
+   Everything the app knows lives in localStorage, which a browser
+   "clear site data" wipes without warning. These let a semester of
+   attendance tracking survive that.
+============================================================== */
+const BACKUP_KEYS = ['studentProfile', 'attendanceRecord', 'timetable', 'gpaState', 'marksScores', 'theme'];
+const BACKUP_APP_ID = 'tarumt-student-toolkit';
+
+window.exportData = function() {
+    const data = {};
+    BACKUP_KEYS.forEach(key => {
+        const value = localStorage.getItem(key);
+        if (value !== null) data[key] = value;
+    });
+
+    const backup = {
+        app: BACKUP_APP_ID,
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        data
+    };
+
+    // Local date, not UTC — otherwise a late-night export here (UTC+8) is
+    // filed under the previous day.
+    const now = new Date();
+    const stamp = [
+        now.getFullYear(),
+        String(now.getMonth() + 1).padStart(2, '0'),
+        String(now.getDate()).padStart(2, '0')
+    ].join('-');
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `student-toolkit-backup-${stamp}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+
+    setBackupStatus('Backup downloaded.', 'var(--success)');
+};
+
+window.importData = function(file) {
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onerror = () => setBackupStatus('Could not read that file.', 'var(--danger)');
+
+    reader.onload = () => {
+        let backup;
+        try {
+            backup = JSON.parse(reader.result);
+        } catch (e) {
+            setBackupStatus('That file is not valid JSON.', 'var(--danger)');
+            return;
+        }
+
+        if (!backup || backup.app !== BACKUP_APP_ID || !backup.data) {
+            setBackupStatus('That does not look like a Student Toolkit backup.', 'var(--danger)');
+            return;
+        }
+
+        const restoring = BACKUP_KEYS.filter(key => typeof backup.data[key] === 'string');
+        if (restoring.length === 0) {
+            setBackupStatus('That backup is empty.', 'var(--danger)');
+            return;
+        }
+
+        const when = backup.exportedAt ? new Date(backup.exportedAt).toLocaleString('en-MY') : 'an unknown date';
+        if (!confirm(`Restore backup from ${when}?\n\nThis replaces your current profile and attendance data.`)) {
+            setBackupStatus('Restore cancelled.', 'var(--text-muted)');
+            return;
+        }
+
+        restoring.forEach(key => localStorage.setItem(key, backup.data[key]));
+        setBackupStatus('Restored. Reloading…', 'var(--success)');
+        setTimeout(() => window.location.reload(), 600);
+    };
+
+    reader.readAsText(file);
+};
+
+function setBackupStatus(message, color) {
+    const el = document.getElementById('backup-status');
+    if (!el) return;
+    el.textContent = message;
+    el.style.color = color;
+}
 
 /* ==============================================================
    DISPLAY CURRENT PROFILE BADGE (GLOBAL)
 ============================================================== */
-document.addEventListener("DOMContentLoaded", () => {
-    const savedProfileJSON = localStorage.getItem('studentProfile');
+function renderProfileBadge() {
     const header = document.querySelector('header');
-    
-    // Check if we are on a tool page (skip the main dashboard)
-    const isDashboard = window.location.pathname.includes('index.html') || window.location.pathname.endsWith('/');
-    
-    if (!isDashboard && header && savedProfileJSON && typeof myDatabase !== 'undefined') {
-        const profile = JSON.parse(savedProfileJSON);
-        const progData = myDatabase.programmes[profile.programme];
-        
-        if (progData) {
-            const progTitle = progData.title;
-            // Format the text to look like "Year 2 Sem 3"
-            const semText = profile.semester ? ` • Year ${profile.semester.charAt(1)} Sem ${profile.semester.charAt(3)}` : '';
 
-            // Create the badge element
-            const badge = document.createElement('div');
-            badge.style.cssText = "display: inline-block; background: var(--bg-color); color: var(--primary); padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; margin-top: 15px; border: 1px solid var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: center;";
-            badge.textContent = progTitle + semText;
-            
-            // Inject it right at the bottom of the header
-            header.appendChild(badge);
-        }
-    }
-});
+    // The dashboard shows its own programme selector, so it needs no badge.
+    const isDashboard = !!document.getElementById('programme-selector');
+    if (isDashboard || !header || typeof myDatabase === 'undefined') return;
+
+    const profile = getProfile();
+    const progData = myDatabase.programmes[profile.programme];
+    if (!progData) return;
+
+    // Format the text to look like "Year 2 Sem 3"
+    const semText = profile.semester
+        ? ` • Year ${profile.semester.charAt(1)} Sem ${profile.semester.charAt(3)}`
+        : '';
+
+    const badge = document.createElement('div');
+    badge.style.cssText = "display: inline-block; background: var(--bg-color); color: var(--primary); padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; margin-top: 15px; border: 1px solid var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: center;";
+    badge.textContent = progData.title + semText;
+
+    header.appendChild(badge);
+}
