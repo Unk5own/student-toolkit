@@ -62,6 +62,14 @@
                     <!-- Cumulative GPA -->
                     <div class="card-section" style="margin: 0 0 25px 0;">
                         <h3 style="margin: 0 0 20px 0; color: var(--primary);">Cumulative GPA (CGPA)</h3>
+
+                        <div id="history-toggle-row" class="history-toggle">
+                            <label>
+                                <input type="checkbox" id="use-history" onchange="toggleHistorySource()">
+                                <span>Work these out from my past semesters</span>
+                            </label>
+                        </div>
+
                         <div class="input-group-col" style="margin-bottom: 15px;">
                             <label for="prev-cgpa" style="font-weight: 600; color: var(--text-main); margin-bottom: 5px;">Previous CGPA</label>
                             <input type="number" id="prev-cgpa" placeholder="e.g., 3.5000" step="0.01" class="styled-select" oninput="calculateCGPA()" style="width: 100%; box-sizing: border-box; padding: 10px;">
@@ -70,6 +78,10 @@
                             <label for="prev-credits" style="font-weight: 600; color: var(--text-main); margin-bottom: 5px;">Previous Total Credits</label>
                             <input type="number" id="prev-credits" placeholder="e.g., 40" class="styled-select" oninput="calculateCGPA()" style="width: 100%; box-sizing: border-box; padding: 10px;">
                         </div>
+
+                        <p id="manual-hint" class="manual-hint" hidden>
+                            Calculated from the grades you entered under Past Semesters. Untick above to type them in yourself.
+                        </p>
                         <div style="margin-top: 25px; padding-top: 20px; border-top: 1px dashed var(--border); text-align: center;">
                             <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: bold; text-transform: uppercase;">Overall CGPA</span>
                             <h2 id="cgpa-score" style="color: var(--success); font-size: 2.5rem; margin: 10px 0;">0.0000</h2>
@@ -85,9 +97,20 @@
                 </div>
             </div>
             
+            <section class="card-section" style="margin-top: 30px;">
+                <div class="history-header">
+                    <div>
+                        <h3>Past Semesters</h3>
+                        <p id="history-summary" class="history-summary">No past grades entered yet.</p>
+                    </div>
+                    <button type="button" class="btn-delete tt-mini" onclick="clearHistory()">Clear history</button>
+                </div>
+                <div id="history-container"></div>
+            </section>
+
             <div style="text-align: center; margin-top: 40px; padding-bottom: 20px;">
                 <button onclick="resetAll()" class="btn-delete" style="padding: 10px 20px; font-size: 1rem; border-radius: 8px; cursor: pointer;">
-                    🚨 Reset All GPA Data
+                    🚨 Reset This Semester
                 </button>
             </div>
         </main>

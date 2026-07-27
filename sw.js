@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tarumt-toolkit-v12';
+const CACHE_NAME = 'tarumt-toolkit-v13';
 
 // Big and effectively immutable: always served straight from cache, never
 // re-fetched on a normal visit. Re-downloading a 6 MB map on every page view
@@ -24,6 +24,7 @@ const CORE_ASSETS = [
   './style.css',
   './script.js',
   './data.js',
+  './university.json',
   './panzoom.min.js',
   './manifest.json',
   './icon-192.png',

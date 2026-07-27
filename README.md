@@ -52,10 +52,21 @@ the Target Marks calculator (used for co-curricular subjects).
 dropdowns and the Target Marks rows. Change a boundary there and every screen
 follows.
 
-**`university.json`** holds the full 9-semester curriculum for both programmes,
-but only `code`, `name` and `credits`. Nothing loads it yet — it is broader than
-`data.js` but shallower, so it would suit past-semester CGPA history rather than
-attendance or marks.
+**`university.json`** holds the full 9-semester curriculum for both programmes
+with `code`, `name` and `credits`. It powers the **Past Semesters** panel on the
+GPA calculator: every semester earlier than your current one is listed with its
+real subjects, and grading them builds your CGPA properly instead of you having
+to remember a previous-CGPA figure.
+
+Tick *"Work these out from my past semesters"* and the Previous CGPA / Previous
+Total Credits boxes become read-only, derived values. Untick it to go back to
+typing them yourself — useful for transfer credits or anything the standard
+curriculum doesn't cover. Both figures are stored, so switching back and forth
+never loses what you typed.
+
+Semester keys sort lexicographically (`Y1S1` < `Y1S2` < … < `Y3S3`), which is
+how "earlier than current" is decided. The current semester is excluded (it is
+the main panel) and future ones are hidden.
 
 ## Where your data lives
 
@@ -115,8 +126,10 @@ a CDN, so the map still pans and zooms offline.
 
 - The grading scale jumps from C (50) straight to F, with no C-/D+/D bands.
   Verify it against your programme handbook before relying on it.
-- No handling for semester rollover; attendance is keyed by course code.
-- `university.json` is still unused — see above.
+- No handling for semester rollover. `data.js` still describes exactly one
+  semester per programme, so when you move to the next one its subjects have to
+  be written in by hand — `university.json` has the codes, names and credits,
+  but not the `weeklyHours` or assessment breakdown the other tools need.
 - `map.html` sets `user-scalable=no` so pinch gestures drive the pan/zoom
   canvas rather than the browser. That trades away browser zoom for low-vision
   users; the PDF map is the fallback.

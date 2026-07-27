@@ -662,6 +662,12 @@ window.initDashboardProfile = function() {
 
     updateWelcomeMessage(profile.programme);
     renderDashboardSummary(profile);
+
+    // The CGPA tile needs university.json, which is fetched. Render once
+    // immediately for the tiles that don't, then again once it lands.
+    if (loadGPAState().useHistory) {
+        loadUniversityHistory().then(() => renderDashboardSummary(profile));
+    }
 };
 
 /* At-a-glance figures on the dashboard, read from the same saved state the
@@ -714,6 +720,22 @@ function renderDashboardSummary(profile) {
             note: `${credits} of ${courses.reduce((s, c) => s + c.credits, 0)} credits graded`,
             colour: 'var(--primary)'
         });
+    }
+
+    // Overall CGPA, once past semesters have been entered. Uses the same
+    // saved history the calculator does, so the two always agree.
+    if (state.useHistory) {
+        const prior = historyTotals();
+        const totalQp = prior.qp + qp;
+        const totalCredits = prior.credits + credits;
+        if (totalCredits > 0) {
+            tiles.push({
+                label: 'CGPA',
+                value: (totalQp / totalCredits).toFixed(4),
+                note: `${totalCredits} credits total`,
+                colour: 'var(--success)'
+            });
+        }
     }
 
     // Next class today, if a timetable has been set up.
@@ -791,6 +813,13 @@ window.initGPACalculator = function() {
 
     universityData = myDatabase;
     loadTermSubjects();
+
+    // Past semesters come from university.json, which is fetched, so this
+    // fills in after the current-semester panel has already rendered.
+    renderSemesterHistory().then(() => {
+        applyHistorySource();
+        calculateCGPA();
+    });
 }
 
 window.loadTermSubjects = function() {
@@ -843,28 +872,45 @@ function loadGPAState() {
     try {
         const stored = JSON.parse(localStorage.getItem('gpaState'));
         if (stored && typeof stored === 'object') {
-            return { grades: stored.grades || {}, prevCgpa: stored.prevCgpa || '', prevCredits: stored.prevCredits || '' };
+            return {
+                grades: stored.grades || {},
+                history: stored.history || {},          // { "Y1S1": { CODE: "4.00" } }
+                useHistory: !!stored.useHistory,
+                prevCgpa: stored.prevCgpa || '',
+                prevCredits: stored.prevCredits || ''
+            };
         }
     } catch (e) { /* fall through to a clean slate */ }
-    return { grades: {}, prevCgpa: '', prevCredits: '' };
+    return { grades: {}, history: {}, useHistory: false, prevCgpa: '', prevCredits: '' };
+}
+
+function persistGPAState(state) {
+    localStorage.setItem('gpaState', JSON.stringify(state));
 }
 
 function saveGPAState() {
+    const state = loadGPAState();
+
+    // Only the current-semester selects; history selects carry a data-sem.
     const grades = {};
-    document.querySelectorAll('.grade-select').forEach(select => {
+    document.querySelectorAll('.grade-select:not(.history-grade)').forEach(select => {
         if (select.value !== '') grades[select.dataset.code] = select.value;
     });
+    state.grades = grades;
 
-    localStorage.setItem('gpaState', JSON.stringify({
-        grades,
-        prevCgpa: document.getElementById('prev-cgpa').value,
-        prevCredits: document.getElementById('prev-credits').value
-    }));
+    // While history drives the CGPA the manual boxes are derived mirrors, so
+    // don't overwrite the user's own figures with them.
+    if (!state.useHistory) {
+        state.prevCgpa = document.getElementById('prev-cgpa').value;
+        state.prevCredits = document.getElementById('prev-credits').value;
+    }
+
+    persistGPAState(state);
 }
 
 function restoreGPAInputs() {
     const state = loadGPAState();
-    document.querySelectorAll('.grade-select').forEach(select => {
+    document.querySelectorAll('.grade-select:not(.history-grade)').forEach(select => {
         const saved = state.grades[select.dataset.code];
         if (saved !== undefined) select.value = saved;
     });
@@ -873,7 +919,9 @@ function restoreGPAInputs() {
 }
 
 window.calculateGPA = function() {
-    const gradeSelects = document.querySelectorAll('.grade-select');
+    // Past-semester dropdowns share the .grade-select styling but carry no
+    // data-credits; including them here would poison the running total.
+    const gradeSelects = document.querySelectorAll('.grade-select:not(.history-grade)');
     currentTermQP = 0;
     currentTermCredits = 0;
 
@@ -896,13 +944,23 @@ window.calculateGPA = function() {
     calculateCGPA();
 }
 
+// Credits and quality points carried in from before this semester: either
+// worked out from the entered grade history, or the manually typed figures.
+function priorTotals() {
+    const state = loadGPAState();
+    if (state.useHistory) return historyTotals();
+
+    const cgpa = parseFloat(document.getElementById('prev-cgpa').value) || 0;
+    const credits = parseInt(document.getElementById('prev-credits').value) || 0;
+    return { qp: cgpa * credits, credits };
+}
+
 window.calculateCGPA = function() {
-    const prevCgpa = parseFloat(document.getElementById('prev-cgpa').value) || 0;
-    const prevCredits = parseInt(document.getElementById('prev-credits').value) || 0;
+    const prior = priorTotals();
     const cgpaScoreElement = document.getElementById('cgpa-score');
 
-    const totalQP = (prevCgpa * prevCredits) + currentTermQP;
-    const totalCredits = prevCredits + currentTermCredits;
+    const totalQP = prior.qp + currentTermQP;
+    const totalCredits = prior.credits + currentTermCredits;
 
     if (totalCredits > 0) {
         cgpaScoreElement.textContent = (totalQP / totalCredits).toFixed(4);
@@ -913,13 +971,241 @@ window.calculateCGPA = function() {
 }
 
 window.resetAll = function() {
-    if(confirm("Are you sure you want to clear all inputs?")) {
-        document.querySelectorAll('.grade-select').forEach(select => select.value = "");
-        document.getElementById('prev-cgpa').value = "";
-        document.getElementById('prev-credits').value = "";
-        localStorage.removeItem('gpaState');
-        calculateGPA();
+    if (!confirm("Clear this semester's grades and the previous CGPA figures?\n\nYour past-semester grade history is kept — clear that separately.")) return;
+
+    // Deliberately preserves `history`: it can represent years of entry and
+    // is not what someone means by "reset this semester".
+    const state = loadGPAState();
+    state.grades = {};
+    state.prevCgpa = '';
+    state.prevCredits = '';
+    persistGPAState(state);
+
+    document.querySelectorAll('.grade-select:not(.history-grade)').forEach(select => select.value = "");
+    document.getElementById('prev-cgpa').value = "";
+    document.getElementById('prev-credits').value = "";
+
+    applyHistorySource();
+    calculateGPA();
+}
+
+window.clearHistory = function() {
+    const { credits } = historyTotals();
+    if (credits === 0) return;
+    if (!confirm(`Delete all past-semester grades (${credits} credits)? This cannot be undone.`)) return;
+
+    const state = loadGPAState();
+    state.history = {};
+    state.useHistory = false;
+    persistGPAState(state);
+
+    renderSemesterHistory().then(() => {
+        applyHistorySource();
+        calculateCGPA();
+    });
+}
+
+/* ==============================================================
+   ACADEMIC HISTORY (university.json)
+   --------------------------------------------------------------
+   data.js describes the current semester in full detail. university.json
+   describes all nine semesters, but only code/name/credits — which is
+   exactly what a past-semester CGPA needs. So past semesters are read
+   from there, and the "previous CGPA" figure becomes something the app
+   works out rather than something you have to remember.
+============================================================== */
+let universityHistory = null;
+
+async function loadUniversityHistory() {
+    if (universityHistory) return universityHistory;
+    try {
+        const response = await fetch('university.json');
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        universityHistory = await response.json();
+    } catch (error) {
+        console.warn('Could not load university.json; falling back to manual CGPA entry.', error);
+        universityHistory = false;
     }
+    return universityHistory;
+}
+
+// Semester keys sort lexicographically (Y1S1 < Y1S2 < ... < Y3S3), so
+// "before the current one" is a plain string comparison.
+function pastSemesters(programmeKey, currentSemester) {
+    if (!universityHistory) return [];
+    const programme = universityHistory.programmes[programmeKey];
+    if (!programme) return [];
+
+    return Object.keys(programme.curriculum)
+        .filter(sem => sem < currentSemester)
+        .sort();
+}
+
+function semesterLabel(sem) {
+    return `Year ${sem.charAt(1)} · Semester ${sem.charAt(3)}`;
+}
+
+function historyCourses(programmeKey, sem) {
+    const programme = universityHistory && universityHistory.programmes[programmeKey];
+    return (programme && programme.curriculum[sem]) || [];
+}
+
+// Quality points and credits banked across every graded past semester.
+function historyTotals() {
+    const state = loadGPAState();
+    const profile = getProfile();
+    let qp = 0, credits = 0;
+
+    pastSemesters(profile.programme, profile.semester).forEach(sem => {
+        const grades = state.history[sem] || {};
+        historyCourses(profile.programme, sem).forEach(course => {
+            const grade = grades[course.code];
+            if (grade === undefined) return;
+            qp += parseFloat(grade) * course.credits;
+            credits += course.credits;
+        });
+    });
+
+    return { qp, credits };
+}
+
+function semesterTotals(programmeKey, sem, grades) {
+    let qp = 0, credits = 0, graded = 0;
+    const courses = historyCourses(programmeKey, sem);
+
+    courses.forEach(course => {
+        const grade = grades[course.code];
+        if (grade === undefined) return;
+        qp += parseFloat(grade) * course.credits;
+        credits += course.credits;
+        graded += 1;
+    });
+
+    return { qp, credits, graded, total: courses.length };
+}
+
+window.renderSemesterHistory = async function() {
+    const container = document.getElementById('history-container');
+    if (!container) return;
+
+    await loadUniversityHistory();
+
+    const profile = getProfile();
+    const semesters = pastSemesters(profile.programme, profile.semester);
+
+    if (!universityHistory || semesters.length === 0) {
+        container.innerHTML = `<p style="color: var(--text-muted); margin: 0;">
+            ${universityHistory
+                ? 'No earlier semesters on record for this programme.'
+                : 'Could not load university.json, so past semesters are unavailable. Enter your previous CGPA manually below.'}
+        </p>`;
+        document.getElementById('history-toggle-row').hidden = true;
+        return;
+    }
+
+    const state = loadGPAState();
+
+    container.innerHTML = semesters.map(sem => {
+        const grades = state.history[sem] || {};
+        const { qp, credits, graded, total } = semesterTotals(profile.programme, sem, grades);
+        const gpa = credits > 0 ? (qp / credits).toFixed(4) : null;
+
+        return `
+            <details class="history-sem"${graded > 0 ? '' : ''}>
+                <summary>
+                    <span class="history-sem-name">${semesterLabel(sem)}</span>
+                    <span class="history-sem-meta">
+                        ${graded === 0
+                            ? `<span class="history-untouched">${total} subjects</span>`
+                            : `${graded}/${total} graded${gpa ? ` · GPA <strong>${gpa}</strong>` : ''}`}
+                    </span>
+                </summary>
+                <div class="history-courses">
+                    ${historyCourses(profile.programme, sem).map(course => `
+                        <div class="history-row">
+                            <div class="history-course">
+                                <strong>${escapeHtml(course.code)}</strong>
+                                <span>${escapeHtml(course.name)}</span>
+                            </div>
+                            <span class="history-credits">${course.credits} cr</span>
+                            <select class="styled-select grade-select history-grade"
+                                    data-sem="${sem}" data-code="${escapeHtml(course.code)}"
+                                    aria-label="Grade for ${escapeHtml(course.name)} in ${semesterLabel(sem)}">
+                                <option value="">—</option>
+                                ${gradingScale.map(g => `
+                                    <option value="${g.point.toFixed(2)}"${grades[course.code] === g.point.toFixed(2) ? ' selected' : ''}>
+                                        ${g.grade} (${g.point.toFixed(2)})
+                                    </option>`).join('')}
+                            </select>
+                        </div>
+                    `).join('')}
+                </div>
+            </details>
+        `;
+    }).join('');
+
+    container.querySelectorAll('.history-grade').forEach(select => {
+        select.addEventListener('change', () => {
+            const saved = loadGPAState();
+            const sem = select.dataset.sem;
+            saved.history[sem] = saved.history[sem] || {};
+
+            if (select.value === '') delete saved.history[sem][select.dataset.code];
+            else saved.history[sem][select.dataset.code] = select.value;
+
+            persistGPAState(saved);
+            renderSemesterHistory();
+            calculateCGPA();
+        });
+    });
+
+    updateHistorySummary();
+};
+
+function updateHistorySummary() {
+    const summary = document.getElementById('history-summary');
+    if (!summary) return;
+
+    const { qp, credits } = historyTotals();
+    summary.textContent = credits > 0
+        ? `${credits} credits banked · CGPA so far ${(qp / credits).toFixed(4)}`
+        : 'No past grades entered yet.';
+}
+
+window.toggleHistorySource = function() {
+    const state = loadGPAState();
+    state.useHistory = document.getElementById('use-history').checked;
+    persistGPAState(state);
+    applyHistorySource();
+    calculateCGPA();
+};
+
+// When history drives the CGPA, the manual fields become read-only mirrors of
+// the computed figures rather than a second, conflicting source of truth.
+function applyHistorySource() {
+    const state = loadGPAState();
+    const cgpaInput = document.getElementById('prev-cgpa');
+    const creditsInput = document.getElementById('prev-credits');
+    const checkbox = document.getElementById('use-history');
+    if (!cgpaInput || !checkbox) return;
+
+    checkbox.checked = !!state.useHistory;
+
+    if (state.useHistory) {
+        const { qp, credits } = historyTotals();
+        cgpaInput.value = credits > 0 ? (qp / credits).toFixed(4) : '';
+        creditsInput.value = credits > 0 ? credits : '';
+    } else {
+        cgpaInput.value = state.prevCgpa;
+        creditsInput.value = state.prevCredits;
+    }
+
+    [cgpaInput, creditsInput].forEach(input => {
+        input.readOnly = !!state.useHistory;
+        input.classList.toggle('is-derived', !!state.useHistory);
+    });
+
+    document.getElementById('manual-hint').hidden = !state.useHistory;
 }
 
 /* ==============================================================
