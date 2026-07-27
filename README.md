@@ -19,8 +19,11 @@ campus map.
 
 ## Running it
 
-Any static file server works. It must be served over HTTP — the service worker
-and the map's `fetch` will not run from `file://`.
+Opening `index.html` straight from disk works — every page, including the
+campus map.
+
+For the offline/installable behaviour you need a real server, because service
+workers don't run from `file://`. Any static one will do:
 
 ```bash
 python -m http.server 8123
