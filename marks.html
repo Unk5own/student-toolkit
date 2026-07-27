@@ -42,7 +42,7 @@
                         
                         <!-- Fixed: Only ONE Subject Dropdown -->
                         <div>
-                            <label style="font-weight: bold; color: var(--primary); display: block; margin-bottom: 8px;">1. Select Subject</label>
+                            <label for="marks-subject" style="font-weight: bold; color: var(--primary); display: block; margin-bottom: 8px;">1. Select Subject</label>
                             <select id="marks-subject" class="styled-select" onchange="renderInterface()">
                                 <option value="">-- Choose Subject --</option>
                                 <!-- JS Injects subjects here -->
@@ -51,7 +51,7 @@
                         
                         <!-- Fixed: Restored the Calculator Mode Dropdown -->
                         <div>
-                            <label style="font-weight: bold; color: var(--primary); display: block; margin-bottom: 8px;">2. Calculator Mode</label>
+                            <label for="calc-mode" style="font-weight: bold; color: var(--primary); display: block; margin-bottom: 8px;">2. Calculator Mode</label>
                             <select id="calc-mode" class="styled-select" onchange="renderInterface()" style="border-color: var(--primary);">
                                 <option value="mode-final">Predict Final Exam Targets</option>
                                 <option value="mode-reverse">Find Missing Component Score</option>

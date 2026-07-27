@@ -470,35 +470,74 @@ function setupMapInteraction(mapElement, mapContainer) {
         );
     }
 
+    // Index of the highlighted result, for arrow-key navigation.
+    let activeIndex = -1;
+
+    function resultButtons() {
+        return [...resultsList.querySelectorAll('[data-place]')];
+    }
+
+    function setActive(index) {
+        const buttons = resultButtons();
+        if (buttons.length === 0) return;
+
+        activeIndex = (index + buttons.length) % buttons.length;
+
+        buttons.forEach((b, i) => {
+            const on = i === activeIndex;
+            b.classList.toggle('is-active', on);
+            b.setAttribute('aria-selected', String(on));
+            if (on) {
+                b.scrollIntoView({ block: 'nearest' });
+                searchInput.setAttribute('aria-activedescendant', b.id);
+            }
+        });
+
+        focusPlace(buttons[activeIndex].dataset.place);
+    }
+
+    function closeResults() {
+        resultsList.innerHTML = '';
+        resultsList.hidden = true;
+        activeIndex = -1;
+        searchInput.setAttribute('aria-expanded', 'false');
+        searchInput.removeAttribute('aria-activedescendant');
+    }
+
     function renderResults(matches, query) {
         if (!resultsList) return;
 
         if (query.length === 0) {
-            resultsList.innerHTML = '';
-            resultsList.hidden = true;
+            closeResults();
             return;
         }
 
         resultsList.hidden = false;
+        searchInput.setAttribute('aria-expanded', 'true');
 
         if (matches.length === 0) {
             resultsList.innerHTML = `<li class="map-result-empty">No place matches “${escapeHtml(query)}”.</li>`;
+            activeIndex = -1;
+            searchInput.removeAttribute('aria-activedescendant');
             return;
         }
 
         resultsList.innerHTML = matches.slice(0, 8).map((m, i) => `
-            <li>
-                <button type="button" data-place="${escapeHtml(m.id)}" class="map-result${i === 0 ? ' is-active' : ''}">
+            <li role="presentation">
+                <button type="button" role="option" id="map-result-${i}" aria-selected="${i === 0}"
+                        data-place="${escapeHtml(m.id)}" class="map-result${i === 0 ? ' is-active' : ''}" tabindex="-1">
                     ${escapeHtml(nameOf(m.id))}
                 </button>
             </li>
         `).join('');
 
-        resultsList.querySelectorAll('[data-place]').forEach(btn => {
+        activeIndex = 0;
+        searchInput.setAttribute('aria-activedescendant', 'map-result-0');
+
+        resultButtons().forEach((btn, i) => {
             btn.addEventListener('click', () => {
-                focusPlace(btn.dataset.place);
-                resultsList.querySelectorAll('.map-result').forEach(b => b.classList.remove('is-active'));
-                btn.classList.add('is-active');
+                setActive(i);
+                searchInput.focus();
             });
         });
     }
@@ -518,6 +557,41 @@ function setupMapInteraction(mapElement, mapContainer) {
 
         // Jump straight to the best match; the list is there to pick another.
         if (matches.length > 0) focusPlace(matches[0].id);
+    });
+
+    // Arrow keys move through matches, Enter commits, Escape dismisses. Focus
+    // stays in the input throughout (a combobox, per the ARIA pattern).
+    searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            clearHighlights();
+            searchInput.value = '';
+            closeResults();
+            return;
+        }
+
+        if (resultsList.hidden || resultButtons().length === 0) return;
+
+        switch (e.key) {
+            case 'ArrowDown': e.preventDefault(); setActive(activeIndex + 1); break;
+            case 'ArrowUp':   e.preventDefault(); setActive(activeIndex - 1); break;
+            case 'Home':      e.preventDefault(); setActive(0); break;
+            case 'End':       e.preventDefault(); setActive(resultButtons().length - 1); break;
+            case 'Enter':
+                e.preventDefault();
+                if (activeIndex >= 0) {
+                    focusPlace(resultButtons()[activeIndex].dataset.place);
+                    closeResults();
+                }
+                break;
+        }
+    });
+
+    // Clicking away dismisses the list, but not when clicking inside it.
+    document.addEventListener('click', (e) => {
+        if (!resultsList.hidden && !resultsList.contains(e.target) && e.target !== searchInput) {
+            resultsList.hidden = true;
+            searchInput.setAttribute('aria-expanded', 'false');
+        }
     });
 
     // 4. Emergency layer — assembly points are already in the SVG but were
@@ -916,6 +990,10 @@ window.initAttendanceTracker = function() {
 
     currentSemesterCourses = myDatabase.programmes[profile.programme].curriculum[profile.semester];
 
+    // Tabs are wired up either way — the Custom tab still works even when the
+    // semester curriculum is empty.
+    initAttendanceTabs();
+
     if (!currentSemesterCourses || currentSemesterCourses.length === 0) {
         semContainer.innerHTML = "<p>No subjects found for this semester.</p>";
         renderCustomAttendance();
@@ -951,14 +1029,52 @@ window.renderSemesterAttendance = function() {
 
 window.renderCustomAttendance = function() {
     const container = document.getElementById('custom-container');
+
+    // An inline form, not a chain of prompt() dialogs: every field is visible
+    // at once, mistakes are correctable, and cancelling loses nothing.
     container.innerHTML = `
-        <div style="margin-bottom: 20px; text-align: right;">
-            <button id="add-custom-subject" class="btn-primary" style="width: auto; padding: 10px 15px; border-radius: 8px; margin-top: 0;">
-                + Add Custom Subject
-            </button>
-        </div>
+        <form id="custom-subject-form" class="custom-form card-section" novalidate>
+            <h3>Add a custom subject</h3>
+
+            <div class="custom-form-grid">
+                <div class="input-group-col cf-wide">
+                    <label for="cf-code">Subject code</label>
+                    <input type="text" id="cf-code" class="styled-select" placeholder="e.g. EGU2" required>
+                </div>
+
+                <div class="input-group-col cf-wide">
+                    <label for="cf-name">Subject name</label>
+                    <input type="text" id="cf-name" class="styled-select" placeholder="e.g. Bahasa Kebangsaan A" required>
+                </div>
+
+                <div class="input-group-col">
+                    <label for="cf-lecture">Lecture h/week</label>
+                    <input type="number" id="cf-lecture" class="styled-select" value="0" min="0" max="40" step="0.5">
+                </div>
+
+                <div class="input-group-col">
+                    <label for="cf-tutorial">Tutorial h/week</label>
+                    <input type="number" id="cf-tutorial" class="styled-select" value="0" min="0" max="40" step="0.5">
+                </div>
+
+                <div class="input-group-col">
+                    <label for="cf-practical">Practical h/week</label>
+                    <input type="number" id="cf-practical" class="styled-select" value="0" min="0" max="40" step="0.5">
+                </div>
+
+                <div class="input-group-col">
+                    <label for="cf-weeks">Total weeks</label>
+                    <input type="number" id="cf-weeks" class="styled-select" value="${SEMESTER_WEEKS}" min="1" max="52" step="1">
+                </div>
+            </div>
+
+            <div class="custom-form-actions">
+                <button type="submit" class="btn-add">+ Add subject</button>
+                <p id="cf-status" class="backup-status" role="status" aria-live="polite"></p>
+            </div>
+        </form>
     `;
-    container.querySelector('#add-custom-subject').addEventListener('click', addCustomSubject);
+    container.querySelector('#custom-subject-form').addEventListener('submit', addCustomSubject);
 
     if (attendanceData.custom.length === 0) {
         const empty = document.createElement('p');
@@ -1110,37 +1226,57 @@ window.undoAbsence = function(type, code, entryIndex, customIndex) {
     else renderCustomAttendance();
 }
 
-window.addCustomSubject = function() {
-    const code = prompt("Enter Subject Code (e.g., EGU2):");
-    if (!code) return;
-    const name = prompt("Enter Subject Name (e.g., Bahasa Kebangsaan A):");
-    if (!name) return;
+window.addCustomSubject = function(event) {
+    event.preventDefault();
 
-    const lec = parseFloat(prompt("Enter LECTURE hours per week (Enter 0 if none):")) || 0;
-    const tut = parseFloat(prompt("Enter TUTORIAL hours per week (Enter 0 if none):")) || 0;
-    const prac = parseFloat(prompt("Enter PRACTICAL hours per week (Enter 0 if none):")) || 0;
-    const weeks = parseInt(prompt("Enter Total Weeks for this class (Usually 14):")) || 14;
+    const value = id => document.getElementById(id).value;
+    const num = id => Math.max(0, parseFloat(value(id)) || 0);
+    const status = document.getElementById('cf-status');
 
-    const totalWeekly = lec + tut + prac;
+    const fail = (message, focusId) => {
+        status.textContent = message;
+        status.style.color = 'var(--danger)';
+        const field = document.getElementById(focusId);
+        if (field) field.focus();
+    };
 
-    if (totalWeekly <= 0) {
-        alert("Error: Total weekly hours cannot be 0. Subject not added.");
-        return;
+    const code = value('cf-code').trim();
+    const name = value('cf-name').trim();
+    if (!code) return fail('Enter a subject code.', 'cf-code');
+    if (!name) return fail('Enter a subject name.', 'cf-name');
+
+    if (attendanceData.custom.some(c => c.code === code.toUpperCase())) {
+        return fail(`You already have a custom subject called ${code.toUpperCase()}.`, 'cf-code');
     }
 
-    attendanceData.custom.push({ 
-        code: code.toUpperCase(), 
-        name: name.toUpperCase(), 
-        lecture: lec,
-        tutorial: tut,
-        practical: prac,
-        weeklyHours: totalWeekly,
-        totalWeeks: weeks,
+    const lecture = num('cf-lecture');
+    const tutorial = num('cf-tutorial');
+    const practical = num('cf-practical');
+    const weeklyHours = lecture + tutorial + practical;
+
+    if (weeklyHours <= 0) {
+        return fail('Total weekly hours must be more than 0.', 'cf-lecture');
+    }
+
+    const totalWeeks = Math.max(1, parseInt(value('cf-weeks'), 10) || SEMESTER_WEEKS);
+
+    attendanceData.custom.push({
+        code: code.toUpperCase(),
+        name: name.toUpperCase(),
+        lecture, tutorial, practical,
+        weeklyHours,
+        totalWeeks,
         entries: []
     });
-    
+
     saveAttendance();
     renderCustomAttendance();
+
+    // renderCustomAttendance rebuilds the form, so report success afterwards.
+    const freshStatus = document.getElementById('cf-status');
+    freshStatus.textContent = `Added ${code.toUpperCase()} (${weeklyHours}h/week).`;
+    freshStatus.style.color = 'var(--success)';
+    document.getElementById('cf-code').focus();
 }
 
 window.deleteCustomSubject = function(index) {
@@ -1168,29 +1304,46 @@ window.resetAttendance = function() {
     }
 }
 
-window.switchTab = function(tabName) {
-    const y2s3Tab = document.getElementById('tab-y2s3');
-    const customTab = document.getElementById('tab-custom');
-    const semContainer = document.getElementById('y2s3-container');
-    const customContainer = document.getElementById('custom-container');
+window.switchTab = function(tabName, { focusTab = false } = {}) {
+    const tabs = {
+        y2s3:   { btn: document.getElementById('tab-y2s3'),   panel: document.getElementById('y2s3-container') },
+        custom: { btn: document.getElementById('tab-custom'), panel: document.getElementById('custom-container') }
+    };
 
-    if (tabName === 'y2s3') {
-        y2s3Tab.style.color = 'var(--danger)';
-        y2s3Tab.style.borderBottomColor = 'var(--danger)';
-        customTab.style.color = 'var(--text-muted)';
-        customTab.style.borderBottomColor = 'transparent';
-        
-        semContainer.style.display = 'block';
-        customContainer.style.display = 'none';
-    } else {
-        customTab.style.color = 'var(--danger)';
-        customTab.style.borderBottomColor = 'var(--danger)';
-        y2s3Tab.style.color = 'var(--text-muted)';
-        y2s3Tab.style.borderBottomColor = 'transparent';
-        
-        semContainer.style.display = 'none';
-        customContainer.style.display = 'block';
-    }
+    Object.entries(tabs).forEach(([name, { btn, panel }]) => {
+        const active = name === tabName;
+        btn.classList.toggle('is-active', active);
+        btn.setAttribute('aria-selected', String(active));
+        // Roving tabindex: only the selected tab is in the tab order, so Tab
+        // moves past the tablist rather than through every tab.
+        btn.tabIndex = active ? 0 : -1;
+        panel.hidden = !active;
+        if (active && focusTab) btn.focus();
+    });
+}
+
+function initAttendanceTabs() {
+    const tablist = document.querySelector('[role="tablist"]');
+    if (!tablist) return;
+
+    const order = ['y2s3', 'custom'];
+    const tabs = order.map(name => document.getElementById(`tab-${name}`));
+
+    tabs.forEach((btn, i) => {
+        btn.addEventListener('click', () => switchTab(order[i]));
+
+        btn.addEventListener('keydown', (e) => {
+            const moves = {
+                ArrowRight: (i + 1) % order.length,
+                ArrowLeft:  (i - 1 + order.length) % order.length,
+                Home: 0,
+                End: order.length - 1
+            };
+            if (!(e.key in moves)) return;
+            e.preventDefault();
+            switchTab(order[moves[e.key]], { focusTab: true });
+        });
+    });
 }
 
 
@@ -1592,6 +1745,9 @@ window.initTimetable = function() {
     renderTimetable();
 };
 
+// Non-null while editing an existing entry; the form doubles as the editor.
+let editingEntryId = null;
+
 function addTimetableEntry(event) {
     event.preventDefault();
 
@@ -1605,28 +1761,75 @@ function addTimetableEntry(event) {
         return;
     }
 
-    const entries = loadTimetable();
-    entries.push({
-        id: `tt-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    const fields = {
         code: document.getElementById('tt-subject').value,
         type: document.getElementById('tt-type').value,
         day: Number(document.getElementById('tt-day').value),
         start,
         end,
         venue: document.getElementById('tt-venue').value.trim()
-    });
+    };
 
-    saveTimetable(entries);
-    status.textContent = 'Class added.';
+    const entries = loadTimetable();
+
+    if (editingEntryId) {
+        const existing = entries.find(e => e.id === editingEntryId);
+        if (existing) Object.assign(existing, fields);
+        saveTimetable(entries);
+        cancelTimetableEdit();
+        status.textContent = 'Class updated.';
+    } else {
+        entries.push({ id: `tt-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, ...fields });
+        saveTimetable(entries);
+        document.getElementById('tt-venue').value = '';
+        status.textContent = 'Class added.';
+    }
+
     status.style.color = 'var(--success)';
-    document.getElementById('tt-venue').value = '';
     renderTimetable();
 }
 
-window.deleteTimetableEntry = function(id) {
-    const entries = loadTimetable().filter(e => e.id !== id);
-    saveTimetable(entries);
+window.editTimetableEntry = function(id) {
+    const entry = loadTimetable().find(e => e.id === id);
+    if (!entry) return;
+
+    editingEntryId = id;
+
+    document.getElementById('tt-subject').value = entry.code;
+    document.getElementById('tt-type').value = entry.type;
+    document.getElementById('tt-day').value = String(entry.day);
+    document.getElementById('tt-start').value = entry.start;
+    document.getElementById('tt-end').value = entry.end;
+    document.getElementById('tt-venue').value = entry.venue || '';
+
+    document.getElementById('tt-form-title').textContent = `Editing ${entry.code}`;
+    document.getElementById('tt-submit-btn').textContent = 'Save changes';
+    document.getElementById('tt-cancel-btn').hidden = false;
+
+    const status = document.getElementById('tt-status');
+    status.textContent = '';
+
+    document.getElementById('tt-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.getElementById('tt-subject').focus();
     renderTimetable();
+};
+
+window.cancelTimetableEdit = function() {
+    editingEntryId = null;
+    document.getElementById('tt-form-title').textContent = 'Add a class';
+    document.getElementById('tt-submit-btn').textContent = '+ Add class';
+    document.getElementById('tt-cancel-btn').hidden = true;
+    document.getElementById('tt-status').textContent = '';
+    renderTimetable();
+};
+
+window.deleteTimetableEntry = function(id) {
+    const entry = loadTimetable().find(e => e.id === id);
+    if (entry && !confirm(`Remove ${entry.code} on ${DAY_NAMES[entry.day]} at ${formatTime(entry.start)}?`)) return;
+
+    saveTimetable(loadTimetable().filter(e => e.id !== id));
+    if (editingEntryId === id) cancelTimetableEdit();
+    else renderTimetable();
 };
 
 // Records the class's full duration against the attendance tracker, so you
@@ -1687,7 +1890,7 @@ function renderTimetable() {
             <div class="tt-day ${day === today ? 'tt-today' : ''}">
                 <h3>${DAY_NAMES[day]}${day === today ? ' <span class="tt-badge">Today</span>' : ''}</h3>
                 ${forDay.map(e => `
-                    <div class="tt-entry">
+                    <div class="tt-entry${e.id === editingEntryId ? ' tt-editing' : ''}">
                         <div class="tt-time">
                             <strong>${formatTime(e.start)}</strong>
                             <span>${formatTime(e.end)}</span>
@@ -1698,7 +1901,8 @@ function renderTimetable() {
                         </div>
                         <div class="tt-actions">
                             <button type="button" class="btn-delete tt-mini" onclick="markClassMissed('${e.id}')" title="Record this class as missed">Missed</button>
-                            <button type="button" class="btn-delete tt-mini" onclick="deleteTimetableEntry('${e.id}')" aria-label="Remove class">✕</button>
+                            <button type="button" class="btn-delete tt-mini" onclick="editTimetableEntry('${e.id}')" aria-label="Edit ${escapeHtml(e.code)} on ${DAY_NAMES[e.day]}">Edit</button>
+                            <button type="button" class="btn-delete tt-mini" onclick="deleteTimetableEntry('${e.id}')" aria-label="Remove ${escapeHtml(e.code)} on ${DAY_NAMES[e.day]}">✕</button>
                         </div>
                     </div>
                 `).join('')}

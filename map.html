@@ -110,7 +110,8 @@
                 <input type="text" id="map-search" class="styled-select" placeholder="🔍 Search for a building, hall, or faculty..."
                        autocomplete="off" role="combobox" aria-expanded="false" aria-controls="map-results"
                        style="padding: 15px; font-size: 1.1rem; border-radius: 30px;">
-                <ul id="map-results" class="map-results" hidden></ul>
+                <ul id="map-results" class="map-results" role="listbox" aria-label="Matching places" hidden></ul>
+                <p class="search-hint">↑↓ to browse · Enter to select · Esc to clear</p>
             </div>
 
             <div class="map-wrapper" id="map-container">

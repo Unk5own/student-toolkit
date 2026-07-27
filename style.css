@@ -378,8 +378,88 @@ body {
 }
 .tt-detail strong { color: var(--text-main); font-size: 0.95rem; }
 
-.tt-actions { display: flex; gap: 8px; }
+.tt-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .tt-mini { padding: 6px 12px; font-size: 0.8rem; }
+
+/* The entry currently loaded into the form for editing */
+.tt-entry.tt-editing {
+    background: rgba(13, 110, 253, 0.08);
+    border-radius: 10px;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+/* ==============================================================
+   CUSTOM SUBJECT FORM (attendance)
+============================================================== */
+.custom-form h3 {
+    margin: 0 0 18px 0;
+    font-size: 1.1rem;
+    color: var(--primary);
+}
+
+.custom-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+@media (min-width: 620px) {
+    .custom-form-grid { grid-template-columns: repeat(4, 1fr); }
+    .cf-wide { grid-column: span 2; }
+}
+
+.custom-form label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 6px;
+}
+
+.custom-form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px;
+    margin-top: 20px;
+}
+
+.custom-form-actions .btn-add { width: auto; }
+
+/* ==============================================================
+   TABS (attendance)
+============================================================== */
+.tab-bar {
+    display: flex;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 25px;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 15px;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-weight: bold;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+}
+
+.tab-btn.is-active {
+    color: var(--danger);
+    border-bottom-color: var(--danger);
+}
+
+.tab-btn:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: -4px;
+    border-radius: 6px;
+}
+
+[role="tabpanel"]:focus { outline: none; }
 
 /* Dated absence log inside each attendance card */
 .attendance-history {
@@ -707,6 +787,18 @@ body {
     padding: 12px 14px;
     color: var(--text-muted);
     font-size: 0.95rem;
+}
+
+/* Keyboard affordance hint under the search box. Pointer-only devices don't
+   have arrow keys to speak of, so hide it there. */
+.search-hint {
+    margin: 8px 4px 0 4px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+@media (pointer: coarse) {
+    .search-hint { display: none; }
 }
 
 /* Emergency assembly points overlay */

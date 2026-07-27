@@ -35,15 +35,16 @@
 
         <main>
 
-            <div style="display: flex; border-bottom: 2px solid var(--border); margin-bottom: 25px;">
-                <button id="tab-y2s3" onclick="switchTab('y2s3')" style="flex: 1; background: transparent; border: none; padding: 15px; color: var(--danger); font-weight: bold; font-size: 1.1rem; border-bottom: 3px solid var(--danger); cursor: pointer; transition: all 0.2s;">Y2S3 Subjects</button>
-                <button id="tab-custom" onclick="switchTab('custom')" style="flex: 1; background: transparent; border: none; padding: 15px; color: var(--text-muted); font-weight: bold; font-size: 1.1rem; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;">Custom Subjects</button>
+            <div class="tab-bar" role="tablist" aria-label="Attendance categories">
+                <button id="tab-y2s3" class="tab-btn is-active" role="tab"
+                        aria-selected="true" aria-controls="y2s3-container" tabindex="0">Y2S3 Subjects</button>
+                <button id="tab-custom" class="tab-btn" role="tab"
+                        aria-selected="false" aria-controls="custom-container" tabindex="-1">Custom Subjects</button>
             </div>
 
-            <div id="y2s3-container"></div>
-            
-            <div id="custom-container" style="display: none;">
-                </div>
+            <div id="y2s3-container" role="tabpanel" aria-labelledby="tab-y2s3" tabindex="0"></div>
+
+            <div id="custom-container" role="tabpanel" aria-labelledby="tab-custom" tabindex="0" hidden></div>
 
             <div style="text-align: center; margin-top: 40px; padding-bottom: 20px;">
                 <button onclick="resetAttendance()" class="btn-delete" style="padding: 10px 20px; font-size: 1rem; border-radius: 8px;">

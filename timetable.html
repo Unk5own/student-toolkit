@@ -35,7 +35,7 @@
 
         <main>
             <section class="card-section">
-                <h3 style="margin: 0 0 18px 0; color: var(--primary);">Add a class</h3>
+                <h3 id="tt-form-title" style="margin: 0 0 18px 0; color: var(--primary);">Add a class</h3>
 
                 <form id="tt-form" class="tt-form">
                     <div class="input-group-col tt-wide">
@@ -73,7 +73,8 @@
                     </div>
 
                     <div class="tt-submit">
-                        <button type="submit" class="btn-add">+ Add class</button>
+                        <button type="submit" id="tt-submit-btn" class="btn-add">+ Add class</button>
+                        <button type="button" id="tt-cancel-btn" class="btn-delete" onclick="cancelTimetableEdit()" hidden>Cancel</button>
                         <p id="tt-status" class="backup-status" role="status" aria-live="polite"></p>
                     </div>
                 </form>

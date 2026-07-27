@@ -103,11 +103,20 @@ npx svgo --config svgo.config.js -i campus-map.svg -o campus-map.svg
 `panzoom` 9.4.0 is vendored locally as `panzoom.min.js` rather than loaded from
 a CDN, so the map still pans and zooms offline.
 
+## Keyboard support
+
+- **Map search** behaves as an ARIA combobox: `↑`/`↓` move through matches and
+  pan the map as you go, `Home`/`End` jump to either end, `Enter` commits and
+  closes the list, `Esc` clears the search and the highlight.
+- **Attendance tabs** follow the ARIA tabs pattern with a roving tabindex:
+  `←`/`→` switch tab, `Home`/`End` jump to the first or last.
+
 ## Known gaps
 
 - The grading scale jumps from C (50) straight to F, with no C-/D+/D bands.
   Verify it against your programme handbook before relying on it.
-- The map results list is mouse-only — no keyboard navigation yet.
-- Adding a custom attendance subject still uses a chain of `prompt()` dialogs.
-- The timetable supports add and delete, but not editing an entry.
 - No handling for semester rollover; attendance is keyed by course code.
+- `university.json` is still unused — see above.
+- `map.html` sets `user-scalable=no` so pinch gestures drive the pan/zoom
+  canvas rather than the browser. That trades away browser zoom for low-vision
+  users; the PDF map is the fallback.
