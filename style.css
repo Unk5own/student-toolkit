@@ -605,12 +605,41 @@ body::before {
 .tt-detail {
     display: flex;
     flex-direction: column;
+    gap: 5px;
     flex: 1;
-    min-width: 140px;
+    min-width: 180px;
     font-size: 0.85rem;
     color: var(--text-muted);
 }
-.tt-detail strong { color: var(--text-main); font-size: 0.95rem; }
+.tt-detail strong {
+    color: var(--text-main);
+    font-size: 0.95rem;
+    font-weight: 650;
+    letter-spacing: -0.1px;
+}
+
+/* Course code, class type and venue as small pills under the subject name. */
+.tt-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.tt-meta > span {
+    padding: 2px 9px;
+    border-radius: var(--r-pill);
+    font-size: 0.74rem;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    background: var(--bg-color);
+    border: 1px solid var(--hairline);
+    white-space: nowrap;
+}
+
+.tt-code { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.tt-type { color: var(--primary); background: var(--tint) !important; border-color: transparent !important; }
+.tt-venue { color: var(--text-muted); }
 
 .tt-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .tt-mini { padding: 6px 13px; font-size: 0.8rem; }

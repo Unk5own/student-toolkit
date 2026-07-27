@@ -707,9 +707,9 @@ function renderProgrammeSwitch(activeKey) {
 // Greets by time of day rather than saying the same thing at 8am and 11pm.
 function greetingForNow() {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 18) return 'Good afternoon';
-    return 'Good evening';
+    if (hour < 12) return 'Good Morning';
+    if (hour < 18) return 'Good Afternoon';
+    return 'Good Evening';
 }
 
 /* At-a-glance figures on the dashboard, read from the same saved state the
@@ -721,29 +721,6 @@ function renderDashboardSummary(profile) {
 
     const courses = myDatabase.programmes[profile.programme].curriculum[profile.semester] || [];
     const tiles = [];
-
-    // Lowest attendance across this semester's subjects.
-    const attendance = loadAttendanceData();
-    let worst = null;
-    courses.forEach(course => {
-        const record = attendance.semester[course.code];
-        if (!record) return;
-
-        const total = (course.weeklyHours || 3) * SEMESTER_WEEKS;
-        if (total === 0) return;
-
-        const pct = ((total - missedHours({ entries: migrateEntries(record) })) / total) * 100;
-        if (!worst || pct < worst.pct) worst = { pct, code: course.code };
-    });
-
-    if (worst) {
-        tiles.push({
-            label: 'Lowest attendance',
-            value: `${worst.pct.toFixed(1)}%`,
-            note: worst.code,
-            colour: worst.pct < ATTENDANCE_THRESHOLD * 100 ? 'var(--danger)' : 'var(--success)'
-        });
-    }
 
     // Semester GPA from saved grades.
     const state = loadGPAState();
@@ -767,10 +744,12 @@ function renderDashboardSummary(profile) {
     // Next class today, if a timetable has been set up.
     const upcoming = nextClassToday();
     if (upcoming) {
+        const course = getCourse(upcoming.code);
+
         tiles.push({
-            label: 'Next class today',
+            label: `Next ${upcoming.type.toLowerCase()} today`,
             value: upcoming.start,
-            note: `${upcoming.code}${upcoming.venue ? ' · ' + upcoming.venue : ''}`,
+            note: `${course ? course.name : upcoming.code}${upcoming.venue ? ' · ' + upcoming.venue : ''}`,
             colour: 'var(--text-main)'
         });
     }
@@ -1744,23 +1723,51 @@ if ('serviceWorker' in navigator) {
    --------------------------------------------------------------
    Class times are personal (they vary by tutorial group), so unlike
    the curriculum they live in localStorage rather than data.js.
-   Stored as: { id, code, type, day, start, end, venue }
+
+   Timetables are kept per programme AND semester, since the two
+   programmes are entirely different courses and must never show each
+   other's classes:
+
+     { "RIS:Y2S3": [ { id, code, type, day, start, end, venue }, ... ],
+       "RFI:Y3S1": [ ... ] }
+
    `day` follows Date.getDay(): 0 = Sunday ... 6 = Saturday.
 ============================================================== */
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 // Teaching week order — Monday first, Sunday last.
 const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
 
-function loadTimetable() {
+function timetableKey() {
+    const profile = getProfile();
+    return profile ? `${profile.programme}:${profile.semester}` : 'unknown';
+}
+
+function loadAllTimetables() {
+    let stored = null;
     try {
-        const stored = JSON.parse(localStorage.getItem('timetable'));
-        if (Array.isArray(stored)) return stored;
+        stored = JSON.parse(localStorage.getItem('timetable'));
     } catch (e) { /* fall through */ }
-    return [];
+
+    // Older versions stored one flat array shared by every programme. Move it
+    // under whichever programme is active so nothing is lost.
+    if (Array.isArray(stored)) {
+        const migrated = { [timetableKey()]: stored };
+        localStorage.setItem('timetable', JSON.stringify(migrated));
+        return migrated;
+    }
+
+    return (stored && typeof stored === 'object') ? stored : {};
+}
+
+function loadTimetable() {
+    const entries = loadAllTimetables()[timetableKey()];
+    return Array.isArray(entries) ? entries : [];
 }
 
 function saveTimetable(entries) {
-    localStorage.setItem('timetable', JSON.stringify(entries));
+    const all = loadAllTimetables();
+    all[timetableKey()] = entries;
+    localStorage.setItem('timetable', JSON.stringify(all));
 }
 
 function minutesOf(time) {
@@ -1954,15 +1961,22 @@ function renderTimetable() {
         return `
             <div class="tt-day ${day === today ? 'tt-today' : ''}">
                 <h3>${DAY_NAMES[day]}${day === today ? ' <span class="tt-badge">Today</span>' : ''}</h3>
-                ${forDay.map(e => `
+                ${forDay.map(e => {
+                    const course = getCourse(e.code);
+                    const name = course ? course.name : '';
+                    return `
                     <div class="tt-entry${e.id === editingEntryId ? ' tt-editing' : ''}">
                         <div class="tt-time">
                             <strong>${formatTime(e.start)}</strong>
                             <span>${formatTime(e.end)}</span>
                         </div>
                         <div class="tt-detail">
-                            <strong>${escapeHtml(e.code)}</strong>
-                            <span>${escapeHtml(e.type)}${e.venue ? ' · ' + escapeHtml(e.venue) : ''}</span>
+                            <strong>${escapeHtml(name || e.code)}</strong>
+                            <span class="tt-meta">
+                                <span class="tt-code">${escapeHtml(e.code)}</span>
+                                <span class="tt-type">${escapeHtml(e.type)}</span>
+                                ${e.venue ? `<span class="tt-venue">${escapeHtml(e.venue)}</span>` : ''}
+                            </span>
                         </div>
                         <div class="tt-actions">
                             <button type="button" class="btn-delete tt-mini" onclick="markClassMissed('${e.id}')" title="Record this class as missed">Missed</button>
@@ -1970,7 +1984,8 @@ function renderTimetable() {
                             <button type="button" class="btn-delete tt-mini" onclick="deleteTimetableEntry('${e.id}')" aria-label="Remove ${escapeHtml(e.code)} on ${DAY_NAMES[e.day]}">✕</button>
                         </div>
                     </div>
-                `).join('')}
+                `;
+                }).join('')}
             </div>
         `;
     }).join('');

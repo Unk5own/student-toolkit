@@ -67,7 +67,7 @@ Everything is in `localStorage` on your device; nothing is uploaded anywhere.
 |---|---|
 | `studentProfile` | Active programme and semester |
 | `attendanceRecord` | Dated absence entries per subject |
-| `timetable` | Your weekly class schedule |
+| `timetable` | Weekly class schedule, keyed per programme and semester |
 | `gpaState` | Saved grades and previous CGPA |
 | `marksScores` | Saved Target Marks inputs |
 | `theme` | Light or dark |
